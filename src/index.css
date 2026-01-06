@@ -2,11 +2,27 @@
 
 html,
 body {
-  width: 400px;
+  width: 350px;
   height: 500px;
   margin: 0;
   padding: 0;
   overflow: hidden;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+*::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+* {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
 /* Choose a different color theme? */

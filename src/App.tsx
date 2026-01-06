@@ -4,7 +4,7 @@ import Settings from "./pages/Settings";
 import Websites from "./pages/Websites";
 
 function App() {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("Dashboard");
 
   const navItems = [
     {
@@ -50,30 +50,30 @@ function App() {
       case "Website":
         return (
           <div>
-            <Settings />
+            <Websites />
           </div>
         );
       case "Settings":
         return (
           <div>
-            <Websites />
+            <Settings />
           </div>
         );
       default:
-        return "Dashboard";
+        return null;
     }
   };
   return (
-    <div className="flex p-4 w-full h-full flex-col justify-center border items-center bg-background">
-      <h1 className="text-(--color-text) w-full flex justify-center text-xl">Lock In</h1>
+    <div className="flex p-4 w-full h-full flex-col justify-start border items-center bg-background border-solid">
+      <h1 className="text-text w-full flex justify-center text-xl">Lock In</h1>
       <nav className="w-full h-fit mt-4">
-        <ul className="grid grid-cols-3 items-start w-full rounded-lg gap-3">
+        <ul className="grid grid-cols-3 items-start w-full rounded-lg gap-2">
           {navItems.map((item) => (
             <li
               className={`flex justify-center items-center col-${
                 item.key
-              } cursor-pointer border-solid rounded-lg px-2 py-1 hover:bg-primary text-(--color-text) transition-all duration-300 ${
-                activeTab === item.name ? "bg-primary" : ""
+              } cursor-pointer border-solid rounded-lg px-2 py-1 hover:bg-primary text-text transition-all duration-300 ${
+                activeTab === item.name ? "bg-primary" : "hover:bg-primary"
               }`}
               onClick={() => setActiveTab(item.name)}
             >
@@ -83,7 +83,7 @@ function App() {
           ))}
         </ul>
       </nav>
-      <div>{renderContent()}</div>
+      <div className="w-full h-full">{renderContent()}</div>
     </div>
   );
 }
