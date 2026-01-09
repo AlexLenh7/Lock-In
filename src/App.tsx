@@ -11,11 +11,27 @@ function App() {
   const [website, setWebsite] = useState<Website[]>([]);
   const [currSite, setCurrSite] = useState<string>("");
   const [globalSwitch, setGlobalSwitch] = useState<boolean>(true);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // Single loader to grab all data
   useEffect(() => {
-    chrome.storage.sync.get({ globalSwitch: true }, (data) => setGlobalSwitch(data.globalSwitch as boolean));
-    chrome.storage.sync.get({ website: [] }, (data) => setWebsite(data.website as Website[]));
+    // use a promise to ensure data loads before applying
+    const loadData = async () => {
+      try {
+        const data = await chrome.storage.sync.get({
+          globalSwitch: true,
+          website: [],
+        });
+
+        setGlobalSwitch(data.globalSwitch as boolean);
+        setWebsite(data.website as Website[]);
+        setIsLoaded(true);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    loadData();
 
     // grab the current site on mount / when popup opens
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -115,6 +131,15 @@ function App() {
         return null;
     }
   };
+
+  // visual safe guard
+  if (!isLoaded) {
+    return (
+      <div className="bg-background">
+        <div className="text-text">Loading Settings...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex p-4 w-full h-full flex-col justify-start border-2 border-text items-center bg-background border-solid outline-none">

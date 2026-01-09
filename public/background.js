@@ -54,7 +54,7 @@ async function handleTab(tabId, timeClicked) {
 async function handleTotalTime(currStartTime, storedStartTime) {
   const { maxTime } = await chrome.storage.sync.get({ maxTime: 1800 }); // grab the most updated time
   const timeSeconds = (currStartTime - storedStartTime) / 1000;
-  let updateTime = maxTime - timeSeconds; // grab the time in seconds spent
+  let updateTime = Math.round(maxTime - timeSeconds); // grab the time in seconds spent
 
   console.log(`[Timer] Subtraction: ${timeSeconds.toFixed(2)}s. Remaining: ${updateTime.toFixed(2)}s`);
 
@@ -64,7 +64,6 @@ async function handleTotalTime(currStartTime, storedStartTime) {
     console.log("[Action] Time limit reached. Redirecting...");
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab) {
-      // let redirect handle updating based on settings
       await redirect(tab.id);
     }
   }
@@ -72,9 +71,16 @@ async function handleTotalTime(currStartTime, storedStartTime) {
 }
 
 // helper function redirect based off block state
-// since we are calling inside handle time that means timer is active so we skip accounting that
 async function redirect(tabId) {
-  const { action } = await chrome.storage.sync.get({ action: "Block" });
+  const data = await chrome.storage.sync.get(["action", "active", "globalSwitch"]);
+
+  // prevent redirect
+  if (data.action === undefined || data.active === undefined) {
+    console.log("[Guard] Storage not ready, skipping enforcement.");
+    return;
+  }
+
+  const action = data.action;
 
   // if action is block then redirect
   if (action === "Block") {
@@ -113,13 +119,27 @@ async function checkBlock(tabId) {
 
 async function syncSession(tabId, reason) {
   console.log(`[Event] Triggered by: ${reason}`);
-
   const timeClicked = Date.now(); // grabs the time instance when user changes tabs
+  const { globalSwitch, active, currentSite, startTime } = await chrome.storage.sync.get([
+    "globalSwitch",
+    "active",
+    "currentSite",
+    "startTime",
+  ]);
+  const { maxTime } = await chrome.storage.sync.get({ maxTime: 1800 });
 
-  // grab the stored site and time if there is one
-  const { currentSite, startTime } = await chrome.storage.local.get(["currentSite", "startTime"]);
-  // grab the state of timer
-  const { active, maxTime } = await chrome.storage.sync.get({ active: false, maxTime: 1800 });
+  if (globalSwitch === undefined) return;
+
+  if (active === undefined) return;
+
+  // If the extension is OFF, stop everything immediately.
+  if (globalSwitch === false) {
+    console.log("[Guard] Extension is Disabled. Allowing all traffic.");
+    return;
+  }
+
+  console.log(maxTime);
+  console.log(active);
 
   // check if currentsite and startTime exists and timer is enabled
   if (currentSite && startTime) {
@@ -150,25 +170,39 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
 
 // Checks if user doesn't switch tabs but updates current tab
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (changeInfo.status === "complete" && tab.url) {
+  const { currentSite } = await chrome.storage.local.get(["currentSite"]);
+
+  if (changeInfo.status === "complete" && tabId !== currentSite) {
     await syncSession(tabId, "URL Update");
   }
 });
 
 // updates storage when settings change
 chrome.storage.onChanged.addListener(async (changes, namespace) => {
-  if (namespace === "sync") {
-    console.log("[Settings] Change detected in storage.");
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab) {
-      await syncSession(tab.id, "Settings Toggle");
-    } else if (changes.globalSwitch?.newValue === false || changes.active?.newValue === false) {
-      const { startTime } = await chrome.storage.local.get("startTime");
-      if (startTime) {
-        await handleTotalTime(Date.now(), startTime);
-        await chrome.storage.local.remove(["currentSite", "startTime"]);
-      }
+  if (namespace !== "sync") return;
+  console.log("[Settings] Change detected:", Object.keys(changes));
+
+  // handles timer and global switches to stop the clock immediately
+  const globalOff = changes.globalSwitch?.newValue === false;
+  const timerOff = changes.active?.newValue === false;
+
+  console.log("global", globalOff);
+  console.log("timer", timerOff);
+
+  if (globalOff || timerOff) {
+    console.log("[Cleanup] User disabled extension/timer. Stopping session.");
+    const { startTime } = await chrome.storage.local.get("startTime");
+    if (startTime) {
+      await handleTotalTime(Date.now(), startTime);
+      await chrome.storage.local.remove(["currentSite", "startTime"]);
     }
+  }
+
+  // evaluate the current tab based on new settings regardless
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (tab.id) {
+    // We pass the latest changes directly to syncSession if possible,
+    await syncSession(tab.id, "Settings Toggle");
   }
 });
 

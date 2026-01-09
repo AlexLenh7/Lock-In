@@ -7,28 +7,31 @@ export default function Settings() {
     { id: 3, state: "Disable", description: "Just disabled", color: "#818181" },
   ];
 
-  const [action, setAction] = useState<string>("Block");
+  const [action, setAction] = useState<string | null>(null);
   const [time, setTime] = useState({ hours: 0, minutes: 0 });
-  const [active, setActive] = useState<boolean>(false);
+  const [active, setActive] = useState<boolean | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    // grab and convert time from seconds to hours and minutes for display
-    chrome.storage.sync.get({ maxTime: 30 }, (data) => {
-      const totalSec = data.maxTime as number;
-      const hour = Math.floor(totalSec / 3600);
-      const min = Math.floor((totalSec % 3600) / 60);
-      setTime({ hours: hour, minutes: min });
-    });
+    const loadData = async () => {
+      try {
+        const data = await chrome.storage.sync.get({ maxTime: 30, action: "Block", active: false });
 
-    // grab button state and update ui
-    chrome.storage.sync.get({ action: "Block" }, (data) => {
-      setAction(data.action as string);
-    });
+        // grab button states and update ui
+        setAction(data.action as string);
+        setActive(data.active as boolean);
 
-    // grab button state on popup
-    chrome.storage.sync.get({ active: false }, (data) => {
-      setActive(data.active as boolean);
-    });
+        // grab and convert time from seconds to hours and minutes for display
+        const totalSec = data.maxTime as number;
+        const hour = Math.floor(totalSec / 3600);
+        const min = Math.floor((totalSec % 3600) / 60);
+        setTime({ hours: hour, minutes: min });
+        setIsLoaded(true);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    loadData();
   }, []);
 
   // save the time in seconds to storage
@@ -56,6 +59,15 @@ export default function Settings() {
   useEffect(() => {
     chrome.storage.sync.set({ action });
   }, [action]);
+
+  // check if settings are loaded before showing ui
+  if (!isLoaded) {
+    return (
+      <div className="bg-background">
+        <div className="text-text">Loading Settings...</div>
+      </div>
+    );
+  }
 
   return (
     // TODO: Add a mode selector
