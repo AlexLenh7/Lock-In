@@ -2,8 +2,7 @@
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   // action for when alarm goes off
   console.log("[Alarm] 30 seconds passed...");
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  const currTab = tabs[0];
+  const [currTab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!currTab) return;
   const { currentSite, startTime } = await chrome.storage.local.get(["currentSite", "startTime"]);
   // make a check to see if tab has changed AND if blocked
@@ -21,7 +20,7 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-async function handleTab(tabId, timeClicked) {
+async function handleTab(tabId, timeClicked, tabUrl) {
   // grab all instances of data from storage when called
   const data = await chrome.storage.sync.get({
     globalSwitch: true,
@@ -43,7 +42,7 @@ async function handleTab(tabId, timeClicked) {
   try {
     if (maxTime > 0) {
       // store the initial time clicked and current website
-      chrome.storage.local.set({ startTime: timeClicked, currentSite: tabId });
+      chrome.storage.local.set({ startTime: timeClicked, currentSite: tabId, lastUrl: tabUrl });
     }
   } catch (error) {
     console.log(error);
@@ -56,7 +55,7 @@ async function handleTotalTime(currStartTime, storedStartTime) {
   const timeSeconds = (currStartTime - storedStartTime) / 1000;
   let updateTime = Math.round(maxTime - timeSeconds); // grab the time in seconds spent
 
-  console.log(`[Timer] Subtraction: ${timeSeconds.toFixed(2)}s. Remaining: ${updateTime.toFixed(2)}s`);
+  console.log(`[Timer] Subtraction: ${timeSeconds}. Remaining: ${updateTime}`);
 
   // check if update time is negative and redirect to content script
   if (updateTime <= 0) {
@@ -117,15 +116,21 @@ async function checkBlock(tabId) {
   return false;
 }
 
-async function syncSession(tabId, reason) {
+async function syncSession(tabId, tabUrl, reason) {
   console.log(`[Event] Triggered by: ${reason}`);
-  const timeClicked = Date.now(); // grabs the time instance when user changes tabs
-  const { globalSwitch, active, currentSite, startTime } = await chrome.storage.sync.get([
+  const timeClicked = Date.now();
+
+  // grab user settings
+  const { globalSwitch, active } = await chrome.storage.sync.get([
     "globalSwitch",
     "active",
     "currentSite",
     "startTime",
   ]);
+
+  // grab current site and start time
+  const { currentSite, startTime, lastUrl } = await chrome.storage.local.get(["currentSite", "startTime", "lastUrl"]);
+
   const { maxTime } = await chrome.storage.sync.get({ maxTime: 1800 });
 
   if (globalSwitch === undefined) return;
@@ -143,11 +148,11 @@ async function syncSession(tabId, reason) {
 
   // check if currentsite and startTime exists and timer is enabled
   if (currentSite && startTime) {
-    console.log(`[State] Closing session for tab: ${currentSite}`);
+    console.log(`[Timer] Committing time for previous path: ${lastUrl}`);
     // make a check to see if tab has changed and update the time
     // if current is different than stored then subtract the time
     await handleTotalTime(timeClicked, startTime);
-    await chrome.storage.local.remove(["currentSite", "startTime"]);
+    await chrome.storage.local.remove(["currentSite", "startTime", "lastUrl"]);
   }
 
   // check if new site is blocked if not then store it
@@ -155,25 +160,24 @@ async function syncSession(tabId, reason) {
   if (await checkBlock(tabId)) {
     if (active && maxTime > 0) {
       console.log(`[State] Opening new session for blocked tab: ${tabId}`);
-      handleTab(tabId, timeClicked);
+      await handleTab(tabId, timeClicked, tabUrl);
     } else {
       console.log(`timer is disabled redirecting...`);
-      redirect(tabId);
+      await redirect(tabId);
     }
   }
 }
 
 // use chrome.tabs.onActivated to listen for tab switches
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
-  await syncSession(activeInfo.tabId, "Tab Switch");
+  await syncSession(activeInfo.tabId, activeInfo.tabId.url, "Tab Switch");
 });
 
 // Checks if user doesn't switch tabs but updates current tab
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  const { currentSite } = await chrome.storage.local.get(["currentSite"]);
-
-  if (changeInfo.status === "complete" && tabId !== currentSite) {
-    await syncSession(tabId, "URL Update");
+  // if internal url content has changed we handle time between change
+  if (changeInfo.url) {
+    await syncSession(tabId, tab.url, "URL path change");
   }
 });
 
@@ -202,7 +206,7 @@ chrome.storage.onChanged.addListener(async (changes, namespace) => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (tab.id) {
     // We pass the latest changes directly to syncSession if possible,
-    await syncSession(tab.id, "Settings Toggle");
+    await syncSession(tab.id, tab.url, "Settings Toggle");
   }
 });
 
