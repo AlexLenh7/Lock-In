@@ -2,14 +2,15 @@
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   // action for when alarm goes off
   console.log("[Alarm] 30 seconds passed...");
-  const [currTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const [currTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
   if (!currTab) return;
+
   const { currentSite, startTime } = await chrome.storage.local.get(["currentSite", "startTime"]);
   // make a check to see if tab has changed AND if blocked
-  if (currTab.id === currentSite && (await checkBlock(currTab.id))) {
-    // if current is different than stored then subtract the time
-    await handleTotalTime(Date.now(), startTime);
-    await chrome.storage.local.set({ startTime: Date.now() });
+  if (currTab.url === currentSite && startTime) {
+    const now = Date.now();
+    await commitTime(now, startTime, currentSite);
+    await chrome.storage.local.set({ startTime: now });
   }
 });
 
@@ -19,55 +20,20 @@ chrome.runtime.onInstalled.addListener(() => {
     periodInMinutes: 0.5,
   });
   updateContentScript();
+  //cleanupOldStorageData();
 });
 
 chrome.runtime.onStartup.addListener(() => {
   updateContentScript();
 });
 
-async function handleTab(tabId, timeClicked, tabUrl) {
-  // grab all instances of data from storage when called
-  const { maxTime } = await chrome.storage.sync.get(["maxTime"]);
-
-  try {
-    if (maxTime > 0) {
-      // store the initial time clicked and current website
-      chrome.storage.local.set({ startTime: timeClicked, currentSite: tabId, lastUrl: tabUrl, showAction: false });
-    }
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-// helper function to calculate total time
-async function handleTotalTime(currStartTime, storedStartTime) {
-  const { maxTime } = await chrome.storage.sync.get({ maxTime: 1800 }); // grab the most updated time
-  const timeSeconds = (currStartTime - storedStartTime) / 1000;
-  let updateTime = Math.round(maxTime - timeSeconds); // grab the time in seconds spent
-
-  console.log(`[Timer] Subtraction: ${timeSeconds}. Remaining: ${updateTime}`);
-
-  // check if update time is negative and redirect to content script
-  if (updateTime <= 0) {
-    updateTime = 0;
-    console.log("[Action] Time limit reached.");
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab) {
-      await chrome.storage.local.set({ showAction: true });
-    }
-  }
-  await chrome.storage.sync.set({ maxTime: updateTime });
-}
-
 // helper function checks if website is blocked
-async function checkBlock(tabId) {
-  const currTab = await chrome.tabs.get(tabId);
+async function checkBlock(tabUrl) {
   const { website } = await chrome.storage.sync.get({ website: [] });
-  if (currTab.url) {
+  if (tabUrl) {
     try {
-      const tabDomain = new URL(currTab.url); // grabs the url of the tab
-      const cleanUrl = tabDomain.hostname.replace(/^www\./, ""); // clean up the url
-      return website.some((site) => site.text === cleanUrl); // returns t/f if website is blocked
+      const tabDomain = new URL(tabUrl).hostname.replace(/^www\./, "");
+      return website.some((site) => site.text === tabDomain); // returns t/f if website is blocked
     } catch (error) {
       console.log(error);
       return false;
@@ -76,16 +42,48 @@ async function checkBlock(tabId) {
   return false;
 }
 
-async function syncSession(tabId, tabUrl, reason) {
+async function commitTime(now, start, url) {
+  const delta = (now - start) / 1000;
+  if (delta <= 0 || isNaN(delta)) return;
+
+  const domain = new URL(url).hostname.replace(/^www\./, "");
+
+  // 1. Always update Global Time
+  const { globalWebsiteTime = {} } = await chrome.storage.local.get("globalWebsiteTime");
+  globalWebsiteTime[domain] = (globalWebsiteTime[domain] || 0) + delta;
+
+  // 2. Conditionally update Blocked Time and Countdown
+  const isBlocked = await checkBlock(url);
+  let updateData = { globalWebsiteTime };
+
+  if (isBlocked) {
+    const { totalWebsiteTime = {} } = await chrome.storage.local.get("totalWebsiteTime");
+    totalWebsiteTime[domain] = (totalWebsiteTime[domain] || 0) + delta;
+
+    const { maxTime } = await chrome.storage.sync.get({ maxTime: 1800 });
+    const newMaxTime = Math.max(0, maxTime - delta);
+
+    console.log(`[Timer] Subtraction: ${delta}. Remaining: ${newMaxTime}`);
+
+    await chrome.storage.sync.set({ maxTime: newMaxTime });
+    updateData.totalWebsiteTime = totalWebsiteTime;
+
+    await chrome.storage.local.set({ showAction: newMaxTime <= 0 });
+    console.log("block sites:", totalWebsiteTime);
+  }
+
+  await chrome.storage.local.set(updateData);
+  console.log(`[Timer] Committed ${delta}s to ${domain}. Blocked: ${isBlocked}`);
+  console.log("global sites:", globalWebsiteTime);
+}
+
+async function syncSession(tabUrl, reason) {
   console.log(`[Event] Triggered by: ${reason}`);
-  const timeClicked = Date.now();
+  const now = Date.now();
 
   // grab user settings
-  const { globalSwitch, active } = await chrome.storage.sync.get(["globalSwitch", "active"]);
-
-  // grab current site and start time
-  const { currentSite, startTime, lastUrl } = await chrome.storage.local.get(["currentSite", "startTime", "lastUrl"]);
-  const { maxTime } = await chrome.storage.sync.get({ maxTime: 1800 });
+  const { globalSwitch, active, maxTime } = await chrome.storage.sync.get(["globalSwitch", "active", "maxTime"]);
+  const { currentSite, startTime } = await chrome.storage.local.get(["currentSite", "startTime"]);
 
   // If the extension is OFF, stop everything immediately.
   if (globalSwitch === false || globalSwitch === undefined || active === undefined) {
@@ -93,31 +91,21 @@ async function syncSession(tabId, tabUrl, reason) {
     return;
   }
 
-  console.log(maxTime);
-  console.log(active);
-
-  // check if currentsite and startTime exists and timer is enabled
+  // if site and start time already exists remove it and start a new session
   if (currentSite && startTime) {
-    console.log(`[Timer] Committing time for previous path: ${lastUrl}`);
-    // make a check to see if tab has changed and update the time
-    await handleTotalTime(timeClicked, startTime);
-    await chrome.storage.local.remove(["currentSite", "startTime", "lastUrl"]);
+    await chrome.storage.local.remove(["currentSite", "startTime"]);
+    await commitTime(now, startTime, currentSite);
+    console.log(`[Timer] Committing time for previous path: ${currentSite}`);
   }
 
-  // if site is blocked
-  if (await checkBlock(tabId)) {
-    // if timer is active with time
-    if (active && maxTime > 0) {
-      console.log(`[State] Opening new session for blocked tab: ${tabId}`);
-      await handleTab(tabId, timeClicked, tabUrl); // handle tab info do not show action
-    } else {
-      console.log(`timer is disabled redirecting...`);
-      // otherwise assume no timer so activate action
-      await chrome.storage.local.set({ showAction: true });
-    }
-  } else {
-    console.log(`Site is not blocked clearing show action`);
-    await chrome.storage.local.set({ showAction: false });
+  // tracks all valid sites
+  if (tabUrl && !tabUrl.startsWith("chrome://") && !tabUrl.startsWith("chrome-extension://")) {
+    const isBlocked = await checkBlock(tabUrl);
+    await chrome.storage.local.set({
+      startTime: now,
+      currentSite: tabUrl,
+      showAction: !(active && maxTime > 0),
+    });
   }
 }
 
@@ -160,7 +148,7 @@ async function updateContentScript() {
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   const tab = await chrome.tabs.get(activeInfo.tabId);
   if (tab.url) {
-    await syncSession(activeInfo.tabId, tab.url, "Tab Switch");
+    await syncSession(tab.url, "Tab Switch");
   }
 });
 
@@ -168,7 +156,7 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   // if internal url content has changed we handle time between change
   if (changeInfo.url) {
-    await syncSession(tabId, tab.url, "URL path change");
+    await syncSession(tab.url, "URL path change");
   }
 });
 
@@ -177,18 +165,27 @@ chrome.storage.onChanged.addListener(async (changes, namespace) => {
   if (namespace !== "sync") return;
   console.log("[Settings] Change detected:", Object.keys(changes));
 
+  if (changes.maxTime) {
+    const { startTime } = await chrome.storage.local.get("startTime");
+    if (startTime) {
+      return;
+    }
+  }
+
   // handles timer and global switches to stop the clock immediately
   const globalOff = changes.globalSwitch && changes.globalSwitch.newValue === false;
   const timerOff = changes.active && changes.active.newValue === false;
 
   if (globalOff || timerOff) {
     console.log("[Cleanup] User disabled extension/timer. Stopping session.");
-    const { startTime } = await chrome.storage.local.get("startTime");
+
+    const { startTime, currentSite } = await chrome.storage.local.get(["startTime", "currentSite"]);
     await chrome.storage.local.set({ showAction: false });
     // if start time exists then handle remaining time left
-    if (startTime) {
-      await handleTotalTime(Date.now(), startTime);
+    if (startTime && currentSite) {
       await chrome.storage.local.remove(["currentSite", "startTime"]);
+      const now = Date.now();
+      commitTime(now, startTime, currentSite);
     }
   }
 
@@ -198,10 +195,10 @@ chrome.storage.onChanged.addListener(async (changes, namespace) => {
   }
 
   // evaluate the current tab based on new settings regardless
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab.id) {
+  const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+  if (tab.url) {
     // We pass the latest changes directly to syncSession if possible,
-    await syncSession(tab.id, tab.url, "Settings Toggle");
+    await syncSession(tab.url, "Settings Toggle");
   }
 });
 
@@ -209,9 +206,19 @@ chrome.storage.onChanged.addListener(async (changes, namespace) => {
 chrome.tabs.onRemoved.addListener(async (tabId) => {
   const { currentSite, startTime } = await chrome.storage.local.get(["currentSite", "startTime"]);
 
-  // If the tab closed was the one we were tracking, save the time
-  if (tabId === currentSite && startTime) {
-    await handleTotalTime(Date.now(), startTime);
-    await chrome.storage.local.remove(["currentSite", "startTime"]);
+  if (currentSite && startTime) {
+    try {
+      const now = Date.now();
+      // If the tab closed was the one we were tracking, save the time
+      commitTime(now, startTime, currentSite);
+      await chrome.storage.local.remove(["currentSite", "startTime"]);
+    } catch (error) {
+      console.error("[Tab onRemove error]:", error);
+    }
   }
 });
+
+async function cleanupOldStorageData() {
+  await chrome.storage.local.remove(["totalWebsiteTime", "globalWebsiteTime", "currentSite", "startTime"]);
+  console.log("[Cleanup] No old entries found.");
+}
