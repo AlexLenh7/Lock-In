@@ -6,6 +6,7 @@ import { FaLock } from "react-icons/fa";
 import { FaLockOpen } from "react-icons/fa";
 import { FaCheck } from "react-icons/fa6";
 import { MdOutlineInvertColors } from "react-icons/md";
+import { isValid } from "./utils/Helpers";
 
 function App() {
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -14,6 +15,7 @@ function App() {
   const [globalSwitch, setGlobalSwitch] = useState<boolean>(true);
   const [isLoaded, setIsLoaded] = useState(false);
   const [color, setColor] = useState<number>(214);
+  const [checkValid, setCheckValid] = useState<boolean>();
 
   const colorCodes = [
     0, //red
@@ -23,6 +25,24 @@ function App() {
     260, //purple
     300, //pink
   ];
+
+  // grab the current site on mount / when popup opens
+  const grabCurrSite = () => {
+    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+      const activeTab = tabs[0];
+      if (activeTab?.url) {
+        try {
+          const url = new URL(activeTab.url);
+          const cleanName = url.hostname.replace(/^www\./, "");
+          setCurrSite(cleanName);
+          const checkValid = await isValid(activeTab?.url);
+          setCheckValid(checkValid);
+        } catch (e) {
+          console.log("invalid URL", e);
+        }
+      }
+    });
+  };
 
   // Single loader to grab all data
   useEffect(() => {
@@ -47,20 +67,7 @@ function App() {
     };
 
     loadData();
-
-    // grab the current site on mount / when popup opens
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const activeTab = tabs[0];
-      if (activeTab?.url) {
-        try {
-          const url = new URL(activeTab.url);
-          const cleanName = url.hostname.replace(/^www\./, "");
-          setCurrSite(cleanName);
-        } catch (e) {
-          console.log("invalid URL", e);
-        }
-      }
-    });
+    grabCurrSite();
   }, []);
 
   useEffect(() => {
@@ -163,11 +170,16 @@ function App() {
 
   return (
     <div className="flex p-4 w-full h-full flex-col justify-start border-2 border-text items-center bg-(--color-primary-background) border-solid outline-none">
-      <h1 className="text-text w-full flex justify-center text-2xl font-bold mb-4">LOCK IN</h1>
+      <div className="relative w-full justify-center flex">
+        <h1 className="text-text w-full flex justify-center text-2xl font-bold mb-4 tracking-widest z-10">LOCK IN.</h1>
+        <h1 className="absolute text-(--color-primary) w-full flex justify-center text-2xl font-bold mb-4 tracking-widest translate-y-0.5 translate-x-0.5">
+          LOCK IN.
+        </h1>
+      </div>
       {/* Add current site button */}
       <div className="grid grid-cols-2 w-full gap-2">
         <div className="col-1 overflow-hidden">
-          {currSite && (
+          {currSite && checkValid && (
             <button
               className={`overflow-hidden border-2 text-text p-1 w-full border-(--color-primary) cursor-pointer flex hover:border-(--color-primary) hover:bg-(--color-primary) transition-all duration-300 justify-center`}
               onClick={addCurr}
@@ -194,6 +206,21 @@ function App() {
                 </>
               )}
             </button>
+          )}
+          {!(currSite && checkValid) && (
+            <div className="overflow-hidden border-2 text-text p-1 w-full border-(--color-primary-dark) flex hover:border-(--color-primary-dark) transition-all duration-300 justify-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                className="size-4 mr-1 text-secondary-text"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+              <span className="justify-center items-center text-secondary-text">Unavaliable for tracking</span>
+            </div>
           )}
           <p className="flex justify-center text-secondary-text">Quick add</p>
         </div>

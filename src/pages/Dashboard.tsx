@@ -67,7 +67,6 @@ export default function Dashboard() {
         let blockData: WebsiteData = {};
         let globalData: WebsiteData = {};
 
-        // --- 3. The Logic Fix ---
         // Only use live data if the selected day matches Today's name.
         if (currDay === todayName) {
           blockData = data.totalWebsiteTime || {};
@@ -200,7 +199,7 @@ export default function Dashboard() {
                 <span className="relative group text-text text-[0.625rem] cursor-help whitespace-nowrap pointer-events-auto">
                   Total Time
                   <div className="z-10 absolute left-1/2 -translate-x-1/2 top-full mt-1 p-1 text-xs w-35 text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-pre-line pointer-events-none">
-                    Sites with 1 minute or less will not display but are still totaled
+                    Sites with 1 minute or less will not displayed but are still counted
                   </div>
                 </span>
               </div>
@@ -224,13 +223,13 @@ export default function Dashboard() {
             {(active === "block" ? websiteTimes : globalTimes).map((site) => (
               <li
                 key={site.domain}
-                className="flex justify-between gap-1 items-center whitespace-nowrap hover:text-text! hover:bg-(--color-primary-dark) text-xs leading-5 p-1"
+                className="flex group justify-between gap-1 items-center whitespace-nowrap hover:bg-(--color-primary-dark) text-xs leading-5 p-1"
               >
                 <span
                   className="w-2 h-2 mr-1 shrink-0 flex items-center transition-all duration-300"
                   style={{ backgroundColor: site.color }}
                 ></span>
-                <span className="text-secondary-text truncate">{site.domain}</span>
+                <span className="text-secondary-text group-hover:text-text truncate">{site.domain}</span>
                 <span className="text-text">{formatTotalTime(site.seconds)}</span>
               </li>
             ))}
