@@ -10,7 +10,7 @@
     "service_worker": "src/scripts/background.js",
     "type": "module"
   },
-  "permissions": ["storage", "tabs", "activeTab", "alarms", "scripting"],
+  "permissions": ["storage", "tabs", "activeTab", "alarms", "scripting", "idle"],
   "host_permissions": ["<all_urls>"],
   "content_scripts": [
     {

@@ -12,21 +12,36 @@ export default function Settings() {
   const [active, setActive] = useState<boolean | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [settingTab, setSettingTab] = useState<string>("Basic");
+  const [afkTimer, setAfkTimer] = useState({ minutes: 1 });
+  const [afkActive, setAfkActive] = useState<boolean | null>(null);
+
+  function convertTime(totalSec: number) {
+    const hour = Math.floor(totalSec / 3600);
+    const min = Math.floor((totalSec % 3600) / 60);
+    return { hour, min };
+  }
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const data = await chrome.storage.sync.get({ maxTime: 30, action: "Block", active: false });
+        const { maxTime, action, active, afkTime, afkActive } = await chrome.storage.sync.get([
+          "maxTime",
+          "action",
+          "active",
+          "afkTime",
+          "afkActive",
+        ]);
 
         // grab button states and update ui
-        setAction(data.action as string);
-        setActive(data.active as boolean);
+        setAction(action as string);
+        setActive(active as boolean);
+        setAfkActive(afkActive as boolean);
 
-        // grab and convert time from seconds to hours and minutes for display
-        const totalSec = data.maxTime as number;
-        const hour = Math.floor(totalSec / 3600);
-        const min = Math.floor((totalSec % 3600) / 60);
-        setTime({ hours: hour, minutes: min });
+        const { min: afkMin } = convertTime(afkTime as number);
+        setAfkTimer({ minutes: afkMin });
+
+        const { hour: timerHour, min: timerMin } = convertTime(maxTime as number);
+        setTime({ hours: timerHour, minutes: timerMin });
         setIsLoaded(true);
       } catch (error) {
         console.log(error);
@@ -35,19 +50,32 @@ export default function Settings() {
     loadData();
   }, []);
 
-  // save the time in seconds to storage
+  // Helper func visual time update
   const saveTime = (h: number, m: number) => {
     const newTime = { hours: h, minutes: m };
     const newTimeSec: number = newTime.hours * 3600 + newTime.minutes * 60;
     setTime(newTime);
-    chrome.storage.sync.set({ maxTime: newTimeSec });
+    return newTimeSec;
+  };
+
+  const saveAfkTime = (m: number) => {
+    const newTime = { minutes: m };
+    const newTimeSec: number = newTime.minutes * 60;
+    setAfkTimer(newTime);
+    return newTimeSec;
   };
 
   // helper function to save active state on change
-  const updateActive = () => {
-    const newActive = !active;
+  const updateActive = (onOff: boolean) => {
+    const newActive = !onOff;
     setActive(newActive);
-    chrome.storage.sync.set({ active: newActive });
+    return newActive;
+  };
+
+  const updateAfkActive = (onOff: boolean) => {
+    const newActive = !onOff;
+    setAfkActive(newActive);
+    return newActive;
   };
 
   // helper function to save action to storage on change
@@ -102,9 +130,9 @@ export default function Settings() {
                 const finalVal = isNaN(val) ? 0 : val;
 
                 if (finalVal > 24) {
-                  saveTime(0, time.minutes);
+                  chrome.storage.sync.set({ maxTime: saveTime(0, time.minutes) });
                 } else {
-                  saveTime(finalVal, time.minutes);
+                  chrome.storage.sync.set({ maxTime: saveTime(finalVal, time.minutes) });
                 }
               }}
               onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
@@ -123,9 +151,9 @@ export default function Settings() {
                 const finalVal = isNaN(val) ? 0 : val;
 
                 if (finalVal >= 60) {
-                  saveTime(time.hours, 0);
+                  chrome.storage.sync.set({ maxTime: saveTime(time.hours, 0) });
                 } else {
-                  saveTime(time.hours, finalVal);
+                  chrome.storage.sync.set({ maxTime: saveTime(time.hours, finalVal) });
                 }
               }}
               onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
@@ -136,7 +164,7 @@ export default function Settings() {
             className={`p-1 flex justify-center items-center col-3 cursor-pointer transition-all duration-300 ${
               active ? "bg-(--color-primary) text-text" : " text-secondary-text"
             }`}
-            onClick={() => updateActive()}
+            onClick={() => chrome.storage.sync.set({ active: updateActive(active as boolean) })}
           >
             {active ? "Enabled" : "Disabled"}
           </button>
@@ -167,13 +195,49 @@ export default function Settings() {
             </button>
           ))}
         </div>
-        {buttonStates.map((b) => (
-          <p
-            className={`flex justify-center items-center mt-1 ${action === b.state ? "text-secondary-text" : "hidden"}`}
+        <div>
+          {buttonStates.map((b) => (
+            <p
+              className={`flex justify-center items-center mt-1 ${action === b.state ? "text-secondary-text" : "hidden"}`}
+            >
+              {b.description}
+            </p>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 w-full border-2 border-(--color-primary) justify-center mt-4">
+          {/* AFK Minutes Input */}
+          <div className="grid grid-cols-2 col-1 w-full">
+            <input
+              className="text-center flex justify-center w-full focus:bg-transparent focus:outline-none focus:ring-0 focus:shadow-none"
+              type="number"
+              placeholder="1"
+              value={afkTimer.minutes || ""}
+              onChange={(e) => {
+                const val = parseInt(e.target.value);
+                const finalVal = isNaN(val) ? 0 : val;
+                if (finalVal >= 60) {
+                  chrome.storage.sync.set({ afkTime: saveAfkTime(1) });
+                } else {
+                  chrome.storage.sync.set({ afkTime: saveAfkTime(finalVal) });
+                }
+              }}
+              onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
+            />
+            <label className="flex items-center">minutes</label>
+          </div>
+
+          <button
+            className={`p-1 flex justify-center items-center col-2 cursor-pointer transition-all duration-300 ${
+              afkActive ? "bg-(--color-primary) text-text" : " text-secondary-text"
+            }`}
+            onClick={() => chrome.storage.sync.set({ afkActive: updateAfkActive(afkActive as boolean) })}
           >
-            {b.description}
-          </p>
-        ))}
+            {afkActive ? "Enabled" : "Disabled"}
+          </button>
+        </div>
+        <span className="flex justify-center mb-4 mt-1 text-secondary-text">
+          Total time of inactivity before AFK state
+        </span>
       </div>
     </div>
   );

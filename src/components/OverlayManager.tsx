@@ -11,17 +11,11 @@ export default function OverlayManager() {
   useEffect(() => {
     const checkStatus = async () => {
       const {
-        active,
         action,
         globalSwitch,
         website = [],
-      } = await chrome.storage.sync.get(["active", "action", "globalSwitch", "website"]);
+      } = await chrome.storage.sync.get(["action", "globalSwitch", "website"]);
       const { showAction } = await chrome.storage.local.get(["showAction"]);
-
-      if (action === undefined || active === undefined) {
-        console.log("[Guard] Storage not ready, skipping enforcement.");
-        return;
-      }
 
       const currentHostname = window.location.hostname.replace(/^www\./, "");
       const isSiteBlocked = (website as Website[]).some((site) => site.text === currentHostname);

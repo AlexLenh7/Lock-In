@@ -15,7 +15,7 @@ export default function Warn({ onClose }: WarnProp) {
         <div className="p-8 flex justify-center flex-col">
           <div className="flex flex-row mb-4 justify-center">
             <span className="text-4xl font-Lexend font-bold text-text justify-center items-center flex">
-              ⚠️ Warning
+              ⚠️ Warning to Lock In
             </span>
           </div>
           <p className="text-lg text-text justify-center flex">You've reached your time limit for today.</p>
