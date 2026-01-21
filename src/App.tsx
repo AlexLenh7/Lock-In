@@ -5,7 +5,6 @@ import Websites, { type Website } from "./pages/Websites";
 import { FaLock } from "react-icons/fa";
 import { FaLockOpen } from "react-icons/fa";
 import { FaCheck } from "react-icons/fa6";
-import { MdOutlineInvertColors } from "react-icons/md";
 import { isValid } from "./utils/Helpers";
 
 function App() {
@@ -14,16 +13,17 @@ function App() {
   const [currSite, setCurrSite] = useState<string>("");
   const [globalSwitch, setGlobalSwitch] = useState<boolean>(true);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [color, setColor] = useState<number>(214);
   const [checkValid, setCheckValid] = useState<boolean>();
+  const [currTheme, setTheme] = useState<string>("default-dark");
 
-  const colorCodes = [
-    0, //red
-    25, //orange
-    214, //blue
-    240, //darkblue
-    260, //purple
-    300, //pink
+  const themes = [
+    { id: 1, theme: "default-dark", name: "Dark" },
+    { id: 2, theme: "default-light", name: "Light" },
+    { id: 3, theme: "neo-tokyo", name: "Tokyo" },
+    { id: 4, theme: "aura", name: "Aura" },
+    { id: 5, theme: "rose", name: "Rose" },
+    { id: 6, theme: "mono", name: "Mono" },
+    { id: 7, theme: "jade", name: "Jade" },
   ];
 
   // grab the current site on mount / when popup opens
@@ -52,14 +52,14 @@ function App() {
         const data = await chrome.storage.sync.get({
           globalSwitch: true,
           website: [],
-          theme: 214,
+          theme: "default-dark",
         });
 
-        document.documentElement.style.setProperty("--theme-hue", (data.theme as number).toString());
+        // document.documentElement.style.setProperty("--theme-hue", (data.theme as number).toString());
 
         setGlobalSwitch(data.globalSwitch as boolean);
         setWebsite(data.website as Website[]);
-        setColor(data.theme as number);
+        setTheme(data.theme as string);
         setIsLoaded(true);
       } catch (error) {
         console.log(error);
@@ -71,12 +71,12 @@ function App() {
   }, []);
 
   useEffect(() => {
-    document.documentElement.style.setProperty("--theme-hue", color.toString());
-  }, [color]);
+    document.documentElement.setAttribute("data-theme", currTheme);
+  }, [currTheme]);
 
-  const handleColorTheme = async (colorTheme: number) => {
-    setColor(colorTheme);
-    chrome.storage.sync.set({ theme: colorTheme });
+  const handleTheme = async (theme: string) => {
+    setTheme(theme);
+    chrome.storage.sync.set({ theme: theme });
   };
 
   // handle global switch state
@@ -165,14 +165,17 @@ function App() {
 
   // visual safe guard
   if (!isLoaded) {
-    return <div className="bg-(--color-primary-background)"></div>;
+    return <div className="bg-primary"></div>;
   }
 
   return (
-    <div className="flex p-4 w-full h-full flex-col justify-start border-2 border-text items-center bg-(--color-primary-background) border-solid outline-none">
+    <div
+      data-theme={currTheme}
+      className="flex p-4 w-full h-full flex-col justify-start border-2 border-text items-center bg-bg border-solid outline-none"
+    >
       <div className="relative w-full justify-center flex">
         <h1 className="text-text w-full flex justify-center text-2xl font-bold mb-4 tracking-widest z-10">LOCK IN.</h1>
-        <h1 className="absolute text-(--color-primary) w-full flex justify-center text-2xl font-bold mb-4 tracking-widest translate-y-0.5 translate-x-0.5">
+        <h1 className="absolute text-primary w-full flex justify-center text-2xl font-bold mb-4 tracking-widest translate-y-0.5 translate-x-0.5">
           LOCK IN.
         </h1>
       </div>
@@ -181,7 +184,7 @@ function App() {
         <div className="col-1 overflow-hidden">
           {currSite && checkValid && (
             <button
-              className={`overflow-hidden border-2 text-text p-1 w-full border-(--color-primary) cursor-pointer flex hover:border-(--color-primary) hover:bg-(--color-primary) transition-all duration-300 justify-center`}
+              className={`overflow-hidden border-2 text-text p-1 w-full border-bg-light cursor-pointer flex hover:border-secondary hover:bg-primary transition-all duration-300 justify-center`}
               onClick={addCurr}
             >
               {website.some((site) => site.text === currSite) ? (
@@ -208,51 +211,52 @@ function App() {
             </button>
           )}
           {!(currSite && checkValid) && (
-            <div className="overflow-hidden border-2 text-text p-1 w-full border-(--color-primary-dark) flex hover:border-(--color-primary-dark) transition-all duration-300 justify-center">
+            <div className="overflow-hidden border-2 text-text p-1 w-full border-bg-dark flex hover:border-bg-dark transition-all duration-300 justify-center">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke-width="1.5"
                 stroke="currentColor"
-                className="size-4 mr-1 text-secondary-text"
+                className="size-4 mr-1 text-sub-text"
               >
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
               </svg>
-              <span className="justify-center items-center text-secondary-text">Unavaliable for tracking</span>
+              <span className="justify-center items-center text-sub-text">Unavaliable for tracking</span>
             </div>
           )}
-          <p className="flex justify-center text-secondary-text">Quick add</p>
+          <p className="flex justify-center text-sub-text">Quick add</p>
         </div>
+        {/* Global Switch */}
         <div className="col-2 grid grid-cols-2">
           <button
             onClick={() => handleToggleGlobal()}
-            className="relative col-span-2 w-full flex p-1 items-center border-2 border-(--color-primary) cursor-pointer overflow-hidden transition-all duration-300"
+            className={`relative col-span-2 w-full flex items-center border-2 ${globalSwitch ? "border-primary" : "border-secondary"} cursor-pointer overflow-hidden transition-all duration-300`}
             aria-label="Toggle Extension"
           >
             <div
               className={`absolute top-0 left-0 h-full w-1/2 transition-transform duration-300 ease-in-out ${
-                globalSwitch ? "translate-x-0 bg-(--color-primary)" : "translate-x-full bg-(--color-primary)"
+                globalSwitch ? "translate-x-0 bg-primary" : "translate-x-full bg-secondary"
               }`}
             />
             <div
-              className={`z-10 flex-1 flex items-center justify-center transition-colors duration-300 ${
-                globalSwitch ? "text-text" : "text-secondary-text"
+              className={`z-10 p-1 flex-1 flex items-center justify-center transition-colors duration-300 ${
+                globalSwitch ? "text-text hover:bg-primary" : "text-sub-text hover:bg-primary"
               }`}
             >
               <FaLock className="mr-1" />
               On
             </div>
             <div
-              className={`z-10 flex-1 flex items-center justify-center transition-colors duration-300 ${
-                !globalSwitch ? "text-text" : "text-secondary-text"
+              className={`z-10 p-1 flex-1 flex items-center justify-center transition-colors duration-300 ${
+                !globalSwitch ? "text-text hover:bg-secondary" : "text-sub-text hover:bg-secondary"
               }`}
             >
               <FaLockOpen className="mr-1" />
               Off
             </div>
           </button>
-          <p className="col-span-2 flex justify-center text-secondary-text">Extension Toggle</p>
+          <p className="col-span-2 flex justify-center text-sub-text">Extension Toggle</p>
         </div>
       </div>
       <nav className="w-full h-fit mt-4">
@@ -261,8 +265,8 @@ function App() {
             <li
               className={`flex justify-center items-center col-${
                 item.key
-              } cursor-pointer border-solid px-2 py-1 hover:bg-(--color-primary) text-text transition-all duration-300 ${
-                activeTab === item.name ? "bg-(--color-primary)" : "hover:bg-(--color-primary-dark)"
+              } cursor-pointer border-solid px-2 py-1 hover:bg-primary text-text transition-all duration-300 ${
+                activeTab === item.name ? "bg-primary" : "hover:bg-primary-dark"
               }`}
               onClick={() => setActiveTab(item.name)}
             >
@@ -274,24 +278,35 @@ function App() {
       </nav>
       <div className="flex w-full h-full">{renderContent()}</div>
       <div className="grid grid-cols-2 w-full mt-4">
-        <div className="flex flex-col col-1 text-text p-1 w-full">
-          <div className="flex-row flex whitespace-nowrap justify-center mb-1">
-            <MdOutlineInvertColors className="mr-1 size-4" />
-            <span className="flex items-center">Theme</span>
-          </div>
-          <div className="flex flex-row gap-1 justify-center items-center">
-            {colorCodes.map((c) => (
-              <button
-                className="w-2 h-2 cursor-pointer"
-                style={{ backgroundColor: `hsl(${c}, 100%, 75%)` }}
-                onClick={() => handleColorTheme(c)}
-              ></button>
-            ))}
-          </div>
+        {/* 1. Remove the middle wrapper div so buttons are direct children of the grid */}
+        {/* 2. Use a fixed grid-cols-3 or inline style for the themes */}
+        <div
+          className="grid col-span-full text-text w-full border-2 border-primary-dark overflow-hidden"
+          style={{ gridTemplateColumns: `repeat(${themes.length}, minmax(0, 1fr))` }}
+        >
+          {themes.map((theme) => (
+            <button
+              key={theme.id}
+              className={`cursor-pointer p-1 flex justify-center transition-all duration-300 ${
+                // Highlight the active theme
+                currTheme === theme.theme ? "bg-primary text-text" : "hover:bg-primary-dark text-sub-text"
+              }`}
+              onClick={() => handleTheme(theme.theme)}
+            >
+              {theme.name}
+            </button>
+          ))}
         </div>
-        <div className="flex flex-col col-2 w-full items-center justify-between p-1">
-          <div className="flex col-2 text-text leading-none">Enjoy Lock In?</div>
-          <div className="flex col-2 text-text leading-none">Consider supporting!</div>
+
+        <div className="col-span-full mt-4">
+          <div className="flex flex-row gap-4">
+            <div className="flex flex-1 border-2 p-1 cursor-pointer transition-all duration-300 border-primary-dark hover:border-primary hover:bg-primary-dark justify-center items-center text-text">
+              Need Help?
+            </div>
+            <div className="flex flex-1 flex-col items-center justify-between border-2 p-1 cursor-pointer transition-all duration-300 hover:border-primary border-primary-dark hover:bg-primary-dark">
+              <div className="flex text-text">Consider supporting!</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

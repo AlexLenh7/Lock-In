@@ -4,7 +4,7 @@ export default function Settings() {
   const buttonStates = [
     { id: 1, state: "Block", description: "Prevents site visit" },
     { id: 2, state: "Warn", description: "Notification but can close out" },
-    { id: 3, state: "Disable", description: "Just disabled" },
+    { id: 3, state: "Disabled", description: "Just disabled" },
   ];
 
   const [action, setAction] = useState<string | null>(null);
@@ -96,28 +96,35 @@ export default function Settings() {
 
   return (
     <div>
-      <div className="rounded-lg text-text">
+      <div className="text-text">
         <div className="flex flex-row items-center w-full h-fit">
           <div className="grid-cols-2 grid my-4 w-full">
             <button
               onClick={() => setSettingTab("Basic")}
-              className={`text-text col-1 flex justify-center p-1 cursor-pointer transition-all duration-300 ${
-                settingTab === "Basic" ? "bg-(--color-primary)" : "bg-transparent hover:bg-(--color-primary-dark)"
+              className={`col-1 flex justify-center p-1 cursor-pointer transition-all duration-300 border-2 ${
+                settingTab === "Basic"
+                  ? "border-primary text-text"
+                  : "bg-transparent hover:bg-primary-dark text-sub-text border-transparent"
               }`}
             >
               Basic Blocking
             </button>
             <button
               onClick={() => setSettingTab("Preset")}
-              className={`text-text col-2 flex justify-center p-1 cursor-pointer transition-all duration-300 ${
-                settingTab === "Preset" ? "bg-(--color-primary)" : "bg-transparent hover:bg-(--color-primary-dark)"
+              className={`col-2 flex justify-center p-1 cursor-pointer transition-all duration-300 border-2 ${
+                settingTab === "Preset"
+                  ? "border-primary text-text"
+                  : "bg-transparent hover:bg-primary-dark text-sub-text border-transparent"
               }`}
             >
               Preset Modes
             </button>
           </div>
         </div>
-        <div className="grid grid-cols-3 w-full border-2 border-(--color-primary) justify-center">
+
+        <div
+          className={`grid grid-cols-3 w-full border-2 border-bg-light justify-center transition-all duration-300 ${active ? "border-primary" : "border-bg-light"}`}
+        >
           {/* Hours Column */}
           <div className="grid grid-cols-2 col-1 w-full">
             <input
@@ -137,7 +144,7 @@ export default function Settings() {
               }}
               onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
             />
-            <label className="flex items-center">{time.hours > 1 ? "hours" : "hour"}</label>
+            <label className="flex items-center text-sub-text">{time.hours > 1 ? "hours" : "hour"}</label>
           </div>
           {/* Minutes Column */}
           <div className="grid grid-cols-2 col-2 w-full">
@@ -158,24 +165,26 @@ export default function Settings() {
               }}
               onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
             />
-            <span className="flex items-center">min</span>
+            <span className="flex items-center text-sub-text">min</span>
           </div>
           <button
             className={`p-1 flex justify-center items-center col-3 cursor-pointer transition-all duration-300 ${
-              active ? "bg-(--color-primary) text-text" : " text-secondary-text"
+              active ? "text-text bg-primary-dark" : "text-sub-text hover:bg-primary-dark"
             }`}
             onClick={() => chrome.storage.sync.set({ active: updateActive(active as boolean) })}
           >
             {active ? "Enabled" : "Disabled"}
           </button>
         </div>
-        <p className="flex justify-center mb-4 mt-1 text-secondary-text">Maximum time allowed</p>
-        <div className="relative grid grid-cols-3 items-center w-full border-2 border-(--color-primary) bg-transparent overflow-hidden">
+        <p className="flex justify-center mb-4 mt-1 text-sub-text">Maximum time allowed</p>
+        <div
+          className={`relative grid grid-cols-3 items-center w-full border-2 transition-all duration-300 ease-in-out ${action === "Disabled" ? "border-bg-light" : "border-primary"} bg-transparent overflow-hidden`}
+        >
           {/* Sliding button */}
           <div
-            className="absolute h-full transition-all duration-300 ease-in-out bg-(--color-primary)"
+            className={`absolute h-full transition-all duration-300 ease-in-out ${action === "Disabled" ? "bg-transparent" : "bg-primary-dark"}`}
             style={{
-              width: "120px",
+              width: "33.33%",
               transform: `translateX(${buttonStates.findIndex((b) => b.state === action) * 100}%)`,
             }}
           />
@@ -183,12 +192,12 @@ export default function Settings() {
             <button
               key={b.id}
               onClick={() => updateAction(b.state)}
-              className={`z-10 flex justify-center items-center col-${
-                b.id
-              } p-1 cursor-pointer transition-colors hover:text-text duration-300${
-                action === b.state
-                  ? " text-text shadow-md" // Active Style
-                  : " text-secondary-text hover:bg-(--color-primary-dark)" // Inactive Style
+              className={`z-10 flex justify-center items-center p-1 hover:bg-primary-dark cursor-pointer transition-all duration-300 col-${b.id} ${
+                action === "Block"
+                  ? `${b.state === action ? "text-text" : "text-sub-text"}`
+                  : action === "Warn"
+                    ? `${b.state === action ? "text-text" : "text-sub-text"}`
+                    : `${b.state === action ? "text-sub-text" : "text-sub-text"} border-bg-light hover:bg-primary-dark`
               }`}
             >
               {b.state}
@@ -197,14 +206,14 @@ export default function Settings() {
         </div>
         <div>
           {buttonStates.map((b) => (
-            <p
-              className={`flex justify-center items-center mt-1 ${action === b.state ? "text-secondary-text" : "hidden"}`}
-            >
+            <p className={`flex justify-center items-center mt-1 ${action === b.state ? "text-sub-text" : "hidden"}`}>
               {b.description}
             </p>
           ))}
         </div>
-        <div className="grid grid-cols-2 w-full border-2 border-(--color-primary) justify-center mt-4">
+        <div
+          className={`grid grid-cols-2 w-full border-2 justify-center mt-4 transition-all duration-300 ${afkActive ? "border-primary" : "border-bg-light"}`}
+        >
           {/* AFK Minutes Input */}
           <div className="grid grid-cols-2 col-1 w-full">
             <input
@@ -223,21 +232,19 @@ export default function Settings() {
               }}
               onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
             />
-            <label className="flex items-center">minutes</label>
+            <label className="flex items-center text-sub-text">minutes</label>
           </div>
 
           <button
             className={`p-1 flex justify-center items-center col-2 cursor-pointer transition-all duration-300 ${
-              afkActive ? "bg-(--color-primary) text-text" : " text-secondary-text"
+              afkActive ? "text-text bg-primary-dark" : " text-sub-text hover:bg-primary-dark"
             }`}
             onClick={() => chrome.storage.sync.set({ afkActive: updateAfkActive(afkActive as boolean) })}
           >
             {afkActive ? "Enabled" : "Disabled"}
           </button>
         </div>
-        <span className="flex justify-center mb-4 mt-1 text-secondary-text">
-          Total time of inactivity before AFK state
-        </span>
+        <span className="flex justify-center mt-1 text-sub-text">Total time of inactivity before AFK state</span>
       </div>
     </div>
   );

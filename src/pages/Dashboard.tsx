@@ -45,7 +45,7 @@ export default function Dashboard() {
     const ratio = totalSeconds > 0 ? seconds / totalSeconds : 0;
     const scaledRatio = Math.sqrt(ratio);
     const saturation = scaledRatio * 100;
-    return `hsl(var(--theme-hue), ${Math.round(saturation)}%, 50%)`;
+    return `color-mix(in oklab, var(--color-primary) ${saturation}%, var(--color-secondary))`;
   };
 
   useEffect(() => {
@@ -151,16 +151,20 @@ export default function Dashboard() {
           <div className="grid grid-cols-2 w-full">
             <button
               onClick={() => setActive("global")}
-              className={`text-text col-1 p-1 flex justify-center cursor-pointer transition-all duration-300 ${
-                active === "global" ? "bg-(--color-primary)" : "bg-transparent hover:bg-(--color-primary-dark)"
+              className={`col-1 p-1 flex justify-center cursor-pointer border-2 transition-all duration-300 ${
+                active === "global"
+                  ? "border-primary text-text"
+                  : "bg-transparent hover:bg-primary-dark text-sub-text border-transparent"
               }`}
             >
               All Websites
             </button>
             <button
               onClick={() => setActive("block")}
-              className={`text-text col-2 p-1 flex justify-center cursor-pointer transition-all duration-300 ${
-                active === "block" ? "bg-(--color-primary)" : "bg-transparent hover:bg-(--color-primary-dark)"
+              className={`col-2 p-1 flex justify-center cursor-pointer transition-all duration-300 border-2 ${
+                active === "block"
+                  ? "border-primary text-text"
+                  : "bg-transparent hover:bg-primary-dark text-sub-text border-transparent"
               }`}
             >
               Blocked Websites
@@ -171,7 +175,7 @@ export default function Dashboard() {
         {/* Day Picker */}
         <ul className="relative w-full h-full flex-row grid grid-cols-7 mt-4 overflow-hidden border-2 border-transparent p-0 list-none">
           <div
-            className="absolute h-full transition-all duration-300 ease-in-out bg-(--color-primary)"
+            className="absolute h-full transition-all duration-300 ease-in-out"
             style={{
               width: "14.28%",
               transform: `translateX(${Days.findIndex((d) => d.name === currDay) * 100}%)`,
@@ -181,8 +185,8 @@ export default function Dashboard() {
             <li key={day.id} className="flex w-full items-center justify-center z-10">
               <button
                 onClick={() => setDay(day.name)}
-                className={`text-text w-full flex justify-center items-center cursor-pointer p-1 hover:text-text transition-all duration-300 ${
-                  currDay === day.name ? "text-text" : "text-secondary-text hover:bg-(--color-primary-dark)"
+                className={`w-full flex justify-center items-center cursor-pointer p-1 hover:text-text transition-all duration-300 ${
+                  currDay === day.name ? "text-text" : "text-sub-text"
                 }`}
               >
                 {day.short}
@@ -196,9 +200,9 @@ export default function Dashboard() {
           <div className={`flex flex-col row-1 self-start ${active === "block" ? "col-1 pr-4" : "col-2 pl-4"}`}>
             <div className="relative flex flex-col self-start">
               <div className="absolute inset-0 row flex items-center justify-center mb-6 pointer-events-none">
-                <span className="relative group text-text text-[0.625rem] cursor-help whitespace-nowrap pointer-events-auto">
+                <span className="relative group text-secondary text-[0.625rem] cursor-help whitespace-nowrap pointer-events-auto">
                   Total Time
-                  <div className="z-10 absolute left-1/2 -translate-x-1/2 top-full mt-1 p-1 text-xs w-35 text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-pre-line pointer-events-none">
+                  <div className="z-10 absolute left-1/2 -translate-x-1/2 top-full mt-1 p-1 text-xs w-35 text-text bg-bg-light rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-pre-line pointer-events-none">
                     Sites with 1 minute or less will not displayed but are still counted
                   </div>
                 </span>
@@ -223,13 +227,13 @@ export default function Dashboard() {
             {(active === "block" ? websiteTimes : globalTimes).map((site) => (
               <li
                 key={site.domain}
-                className="flex group justify-between gap-1 items-center whitespace-nowrap hover:bg-(--color-primary-dark) text-xs leading-5 p-1"
+                className="flex group justify-between gap-1 items-center whitespace-nowrap hover:bg-bg-light text-xs leading-5 p-1"
               >
                 <span
                   className="w-2 h-2 mr-1 shrink-0 flex items-center transition-all duration-300"
                   style={{ backgroundColor: site.color }}
                 ></span>
-                <span className="text-secondary-text group-hover:text-text truncate">{site.domain}</span>
+                <span className="text-sub-text group-hover:text-text truncate">{site.domain}</span>
                 <span className="text-text">{formatTotalTime(site.seconds)}</span>
               </li>
             ))}

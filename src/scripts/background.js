@@ -208,7 +208,7 @@ chrome.runtime.onInstalled.addListener(async () => {
     await updateContentScript();
     chrome.idle.setDetectionInterval(30);
     await fullReset();
-    await resetWeeklyData();
+    //await resetWeeklyData();
     //cleanupOldStorageData();
   } catch (error) {
     console.error("[onInstall Error]:", error);
