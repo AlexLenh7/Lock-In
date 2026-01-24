@@ -1,4 +1,258 @@
-import { isValid } from "../utils/Helpers";
+import { isValid, checkBlock, formatTimeDifference } from "../utils/Helpers";
+
+async function calculateInsights() {
+  try {
+    const {
+      globalWebsiteTime = {},
+      totalWebsiteTime = {},
+      storeBlockDay = {},
+      storeGlobalDay = {},
+      currentDay,
+    } = await chrome.storage.local.get([
+      "globalWebsiteTime",
+      "totalWebsiteTime",
+      "storeBlockDay",
+      "storeGlobalDay",
+      "currentDay",
+    ]);
+
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const todayIndex = currentDay ?? new Date().getDay();
+    const todayName = days[todayIndex];
+
+    // Calculate today's totals
+    const todayGlobalTotal = Object.values(globalWebsiteTime).reduce((sum, time) => sum + time, 0);
+    const todayBlockedTotal = Object.values(totalWebsiteTime).reduce((sum, time) => sum + time, 0);
+
+    // Calculate weekly totals
+    let weeklyGlobalTotal = todayGlobalTotal;
+    let weeklyBlockedTotal = todayBlockedTotal;
+    let daysWithData = todayGlobalTotal > 0 ? 1 : 0;
+
+    days.forEach((day) => {
+      if (day !== todayName) {
+        const dayGlobalData = storeGlobalDay[day];
+        const dayBlockData = storeBlockDay[day];
+
+        if (dayGlobalData && typeof dayGlobalData === "object") {
+          const dayGlobalTotal = Object.values(dayGlobalData).reduce((sum, time) => sum + time, 0);
+          weeklyGlobalTotal += dayGlobalTotal;
+          if (dayGlobalTotal > 0) daysWithData++;
+        }
+
+        if (dayBlockData && typeof dayBlockData === "object") {
+          const dayBlockedTotal = Object.values(dayBlockData).reduce((sum, time) => sum + time, 0);
+          weeklyBlockedTotal += dayBlockedTotal;
+        }
+      }
+    });
+
+    // Calculate daily average
+    const dailyAverage = daysWithData > 0 ? weeklyGlobalTotal / daysWithData : 0;
+
+    // Get yesterday's data
+    const yesterdayIndex = (todayIndex - 1 + 7) % 7;
+    const yesterdayName = days[yesterdayIndex];
+    const yesterdayGlobalData = storeGlobalDay[yesterdayName];
+    const yesterdayBlockData = storeBlockDay[yesterdayName];
+
+    const yesterdayTotal =
+      yesterdayGlobalData && typeof yesterdayGlobalData === "object"
+        ? Object.values(yesterdayGlobalData).reduce((sum, time) => sum + time, 0)
+        : 0;
+
+    const yesterdayBlocked =
+      yesterdayBlockData && typeof yesterdayBlockData === "object"
+        ? Object.values(yesterdayBlockData).reduce((sum, time) => sum + time, 0)
+        : 0;
+
+    // Calculate percentage of time on blocked sites
+    const blockedPercentage = todayGlobalTotal > 0 ? (todayBlockedTotal / todayGlobalTotal) * 100 : 0;
+    const weeklyBlockedPercentage = weeklyGlobalTotal > 0 ? (weeklyBlockedTotal / weeklyGlobalTotal) * 100 : 0;
+    const yesterdayBlockedPercentage = yesterdayTotal > 0 ? (yesterdayBlocked / yesterdayTotal) * 100 : 0;
+
+    // Calculate time spent comparisons from yesterday
+    const timeSpentFromYesterday =
+      yesterdayTotal > 0 ? ((yesterdayTotal - todayGlobalTotal) / yesterdayTotal) * 100 : 0;
+
+    const blockedTimeFromYesterday =
+      yesterdayBlocked > 0 ? ((yesterdayBlocked - todayBlockedTotal) / yesterdayBlocked) * 100 : 0;
+
+    // Calculate difference from average
+    const diffFromAverage = todayGlobalTotal - dailyAverage;
+
+    // Helper function to calculate focus score for any day
+    const calculateDayFocusScore = (dayGlobalTotal, dayBlockedTotal, dayAverage, prevDayTotal) => {
+      if (dayGlobalTotal === 0) return 0;
+
+      let score = 100;
+
+      // Blocked percentage
+      const dayBlockedPercentage = dayGlobalTotal > 0 ? (dayBlockedTotal / dayGlobalTotal) * 100 : 0;
+      score -= Math.min(40, dayBlockedPercentage * 0.8);
+
+      // vs average
+      const dayDiffFromAverage = dayGlobalTotal - dayAverage;
+      if (dayDiffFromAverage > 0 && dayAverage > 0) {
+        score -= Math.min(30, (dayDiffFromAverage / dayAverage) * 30);
+      } else if (dayDiffFromAverage < 0 && dayAverage > 0) {
+        score += Math.min(20, Math.abs(dayDiffFromAverage / dayAverage) * 20);
+      }
+
+      // vs previous day
+      if (prevDayTotal > 0) {
+        const improvement = ((prevDayTotal - dayGlobalTotal) / prevDayTotal) * 100;
+        if (improvement < 0) {
+          score -= Math.min(20, Math.abs(improvement) * 0.5);
+        } else {
+          score += Math.min(10, improvement * 0.5);
+        }
+      }
+
+      return Math.max(0, Math.min(100, Math.round(score)));
+    };
+
+    // Calculate today's focus score
+    let focusScore = 100;
+
+    // Deduct points for high blocked percentage (max -40 points)
+    focusScore -= Math.min(40, blockedPercentage * 0.8);
+
+    // Deduct points for exceeding daily average (max -30 points)
+    if (diffFromAverage > 0 && dailyAverage > 0) {
+      focusScore -= Math.min(30, (diffFromAverage / dailyAverage) * 30);
+    } else if (diffFromAverage < 0 && dailyAverage > 0) {
+      focusScore += Math.min(20, Math.abs(diffFromAverage / dailyAverage) * 20);
+    }
+
+    // Deduct points for worsening from yesterday (max -20 points)
+    if (timeSpentFromYesterday < 0) {
+      focusScore -= Math.min(20, Math.abs(timeSpentFromYesterday) * 0.5);
+    } else if (timeSpentFromYesterday > 0) {
+      focusScore += Math.min(10, timeSpentFromYesterday * 0.5);
+    }
+
+    focusScore = Math.max(0, Math.min(100, Math.round(focusScore)));
+
+    // Calculate yesterday's focus score for comparison
+    const yesterdayFocusScore = calculateDayFocusScore(
+      yesterdayTotal,
+      yesterdayBlocked,
+      dailyAverage,
+      0, // We don't have the day before yesterday for this calculation
+    );
+
+    // Calculate focus score change from yesterday
+    const focusScoreFromYesterday = yesterdayFocusScore > 0 ? focusScore - yesterdayFocusScore : 0;
+
+    // Calculate streak (consecutive days with focus score > 75)
+    let streak = 0;
+
+    if (focusScore > 75) {
+      streak = 1;
+
+      let previousDayTotal = todayGlobalTotal;
+
+      for (let i = 1; i < 7; i++) {
+        const checkDayIndex = (todayIndex - i + 7) % 7;
+        const checkDayName = days[checkDayIndex];
+        const checkDayGlobalData = storeGlobalDay[checkDayName];
+        const checkDayBlockData = storeBlockDay[checkDayName];
+
+        if (!checkDayGlobalData || typeof checkDayGlobalData !== "object") {
+          break;
+        }
+
+        const checkDayGlobalTotal = Object.values(checkDayGlobalData).reduce((sum, time) => sum + time, 0);
+        const checkDayBlockedTotal =
+          checkDayBlockData && typeof checkDayBlockData === "object"
+            ? Object.values(checkDayBlockData).reduce((sum, time) => sum + time, 0)
+            : 0;
+
+        const prevCheckDayIndex = (checkDayIndex - 1 + 7) % 7;
+        const prevCheckDayName = days[prevCheckDayIndex];
+        const prevCheckDayData = storeGlobalDay[prevCheckDayName];
+        const prevCheckDayTotal =
+          prevCheckDayData && typeof prevCheckDayData === "object"
+            ? Object.values(prevCheckDayData).reduce((sum, time) => sum + time, 0)
+            : 0;
+
+        const dayScore = calculateDayFocusScore(
+          checkDayGlobalTotal,
+          checkDayBlockedTotal,
+          dailyAverage,
+          prevCheckDayTotal,
+        );
+
+        if (dayScore > 75) {
+          streak++;
+        } else {
+          break;
+        }
+      }
+    }
+
+    // Find best and worst days
+    let bestDay = null;
+    let worstDay = null;
+
+    const daysData = [];
+
+    if (todayGlobalTotal > 0) {
+      daysData.push({ name: todayName, time: todayGlobalTotal });
+    }
+
+    days.forEach((day) => {
+      if (day !== todayName) {
+        const dayData = storeGlobalDay[day];
+        if (dayData && typeof dayData === "object") {
+          const dayTotal = Object.values(dayData).reduce((sum, time) => sum + time, 0);
+          if (dayTotal > 0) {
+            daysData.push({ name: day, time: dayTotal });
+          }
+        }
+      }
+    });
+
+    if (daysData.length > 0) {
+      bestDay = daysData.reduce((best, current) => (current.time < best.time ? current : best));
+      worstDay = daysData.reduce((worst, current) => (current.time > worst.time ? current : worst));
+    }
+
+    const insights = {
+      todayTotal: todayGlobalTotal,
+      todayBlocked: todayBlockedTotal,
+      weeklyTotal: weeklyGlobalTotal,
+      weeklyBlocked: weeklyBlockedTotal,
+      dailyAverage,
+      yesterdayTotal,
+      yesterdayBlocked,
+      blockedPercentage,
+      weeklyBlockedPercentage,
+      yesterdayBlockedPercentage,
+      timeSpentFromYesterday,
+      blockedTimeFromYesterday,
+      focusScoreFromYesterday,
+      yesterdayFocusScore,
+      diffFromAverage,
+      focusScore,
+      streak,
+      bestDay: bestDay?.name || todayName,
+      bestDayTime: bestDay?.time || todayGlobalTotal,
+      worstDay: worstDay?.name || todayName,
+      worstDayTime: worstDay?.time || todayGlobalTotal,
+      lastUpdated: Date.now(),
+    };
+
+    await chrome.storage.local.set({ insights });
+    console.log("[Insights] Calculated:", insights);
+
+    return insights;
+  } catch (error) {
+    console.error("[calculateInsights Error]:", error);
+    return null;
+  }
+}
 
 // handles true AFK status
 async function handleAfkTime() {
@@ -208,6 +462,7 @@ chrome.runtime.onInstalled.addListener(async () => {
     await updateContentScript();
     chrome.idle.setDetectionInterval(30);
     await fullReset();
+    await resetInsights();
     //await resetWeeklyData();
     //cleanupOldStorageData();
   } catch (error) {
@@ -233,6 +488,7 @@ async function checkDay() {
     if (currentDay === undefined) {
       console.log("[Setup] First run detected. Initializing currentDay.");
       await chrome.storage.local.set({ currentDay: today });
+      await calculateInsights();
       return;
     }
 
@@ -277,27 +533,9 @@ async function checkDay() {
     console.log("CurrDay Global Times:", storeGlobalDay);
     // reset times for the new day
     await cleanupOldStorageData();
+    await calculateInsights();
   } catch (error) {
     console.error("[checkDay Error]:", error);
-  }
-}
-
-// helper function checks if website is blocked
-async function checkBlock(tabUrl) {
-  try {
-    const { website } = await chrome.storage.sync.get({ website: [] });
-    if (tabUrl) {
-      try {
-        const tabDomain = new URL(tabUrl).hostname.replace(/^www\./, "");
-        return website.some((site) => site.text === tabDomain); // returns t/f if website is blocked
-      } catch (error) {
-        console.log(error);
-        return false;
-      }
-    }
-    return false;
-  } catch (error) {
-    console.error("[checkBlock Error]:", error);
   }
 }
 
@@ -343,6 +581,7 @@ async function commitTime(now, start, url) {
     }
 
     await chrome.storage.local.set(updateData);
+    await calculateInsights();
     console.log(`[Timer] Committed ${delta}s to ${domain}. Blocked: ${isBlocked}`);
     console.log("global sites:", globalWebsiteTime);
   } catch (error) {
@@ -547,4 +786,8 @@ async function resetWeeklyData() {
 async function fullReset() {
   await chrome.storage.local.remove(["pendingReturn", "returnCheckTime", "idleStart", "afkReached", "tmpAfkTime"]);
   console.log("[Cleanup] full reset.");
+}
+
+async function resetInsights() {
+  await chrome.storage.local.remove(["insights"]);
 }

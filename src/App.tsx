@@ -4,8 +4,11 @@ import Settings from "./pages/Settings";
 import Websites, { type Website } from "./pages/Websites";
 import { FaLock } from "react-icons/fa";
 import { FaLockOpen } from "react-icons/fa";
-import { FaCheck } from "react-icons/fa6";
 import { isValid } from "./utils/Helpers";
+import { CgPlayListAdd } from "react-icons/cg";
+import { CgPlayListRemove } from "react-icons/cg";
+import { SiKofi } from "react-icons/si";
+import { MdHelp } from "react-icons/md";
 
 function App() {
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -174,7 +177,7 @@ function App() {
       className="flex p-4 w-full h-full flex-col justify-start border-2 border-text items-center bg-bg border-solid outline-none"
     >
       <div className="relative w-full justify-center flex">
-        <h1 className="text-text w-full flex justify-center text-2xl font-bold mb-4 tracking-widest z-10">LOCK IN.</h1>
+        <h1 className="text-text w-full flex justify-center text-2xl font-bold mb-2 tracking-widest z-10">LOCK IN.</h1>
         <h1 className="absolute text-primary w-full flex justify-center text-2xl font-bold mb-4 tracking-widest translate-y-0.5 translate-x-0.5">
           LOCK IN.
         </h1>
@@ -184,28 +187,18 @@ function App() {
         <div className="col-1 overflow-hidden">
           {currSite && checkValid && (
             <button
-              className={`overflow-hidden border-2 text-text p-1 w-full border-bg-light cursor-pointer flex hover:border-secondary hover:bg-primary transition-all duration-300 justify-center`}
+              className={`overflow-hidden border-2 text-text p-1 w-full border-bg-light cursor-pointer flex items-center hover:border-secondary hover:bg-primary transition-all duration-300 justify-center`}
               onClick={addCurr}
             >
               {website.some((site) => site.text === currSite) ? (
                 <>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="1.5"
-                    stroke="currentColor"
-                    className="size-4 mr-1"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                  </svg>
-
-                  <span className="flex items-center justfiy-center">Site already added</span>
+                  <CgPlayListRemove className="size-4 mr-1" />
+                  <span className="flex justfiy-center truncate">Site already added</span>
                 </>
               ) : (
                 <>
-                  <FaCheck className="size-4 mr-1" />
-                  <span className="justify-center items-center truncate">{currSite}?</span>
+                  <CgPlayListAdd className="size-4 mr-1" />
+                  <span className="flex justify-center truncate">{currSite}?</span>
                 </>
               )}
             </button>
@@ -225,7 +218,7 @@ function App() {
               <span className="justify-center items-center text-sub-text">Unavaliable for tracking</span>
             </div>
           )}
-          <p className="flex justify-center text-sub-text">Quick add</p>
+          {/* <p className="flex justify-center text-sub-text">Quick add</p> */}
         </div>
         {/* Global Switch */}
         <div className="col-2 grid grid-cols-2">
@@ -256,7 +249,7 @@ function App() {
               Off
             </div>
           </button>
-          <p className="col-span-2 flex justify-center text-sub-text">Extension Toggle</p>
+          {/* <p className="col-span-2 flex justify-center text-sub-text">Extension Toggle</p> */}
         </div>
       </div>
       <nav className="w-full h-fit mt-4">
@@ -298,13 +291,15 @@ function App() {
           ))}
         </div>
 
-        <div className="col-span-full mt-4">
-          <div className="flex flex-row gap-4">
+        <div className="col-span-full mt-2">
+          <div className="flex flex-row gap-2">
             <div className="flex flex-1 border-2 p-1 cursor-pointer transition-all duration-300 border-primary-dark hover:border-primary hover:bg-primary-dark justify-center items-center text-text">
-              Need Help?
+              <MdHelp className="size-4 mr-1" /> Help
             </div>
             <div className="flex flex-1 flex-col items-center justify-between border-2 p-1 cursor-pointer transition-all duration-300 hover:border-primary border-primary-dark hover:bg-primary-dark">
-              <div className="flex text-text">Consider supporting!</div>
+              <div className="flex text-text">
+                <SiKofi className="size-4 mr-1" /> Donate
+              </div>
             </div>
           </div>
         </div>

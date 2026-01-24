@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
 import { PieChart } from "react-minimal-pie-chart";
+import Insights from "./Insights";
+import { formatTotalTime } from "../utils/Helpers";
+import { GrLineChart } from "react-icons/gr";
+import { IoArrowBack } from "react-icons/io5";
+import { type InsightsData } from "./Insights";
+import { BsFire } from "react-icons/bs";
+import { TbFocus2 } from "react-icons/tb";
 
 // storage types
 interface WebsiteData {
@@ -28,6 +35,8 @@ export default function Dashboard() {
   const [websiteTimes, setWebsiteTimes] = useState<SiteStat[]>([]);
   const [globalTimes, setGlobalTimes] = useState<SiteStat[]>([]);
   const [active, setActive] = useState<string>("global");
+  const [showInsights, setShowInsights] = useState<boolean>(false);
+  const [scoreStreak, setScoreStreak] = useState<InsightsData | null>(null);
 
   const Days = [
     { id: 1, short: "Sun", name: "Sunday" },
@@ -58,6 +67,9 @@ export default function Dashboard() {
           "storeGlobalDay",
           "currentDay",
         ])) as StorageData;
+
+        const insightData = await chrome.storage.local.get(["insights"]);
+        setScoreStreak(insightData.insights as InsightsData);
 
         // Determine "Today" from storage (fallback to system time)
         const todayIndex = data.currentDay ?? new Date().getDay();
@@ -104,6 +116,8 @@ export default function Dashboard() {
     loadData();
   }, [currDay]); // Re-run whenever the user clicks a different day
 
+  const { focusScore, streak } = scoreStreak || { focusScore: 0, streak: 0 };
+
   const chartData = websiteTimes.map((site) => ({
     title: site.domain,
     value: site.seconds,
@@ -123,24 +137,18 @@ export default function Dashboard() {
     return formatTotalTime(globalTimes.reduce((accumulator, site) => accumulator + site.seconds, 0));
   };
 
-  function formatTotalTime(totalSeconds: number) {
-    if (totalSeconds <= 0 || isNaN(totalSeconds)) return "0s";
-
-    const days = Math.floor(totalSeconds / (24 * 3600));
-    const hours = Math.floor((totalSeconds % (24 * 3600)) / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = Math.round(totalSeconds % 60);
-
-    const parts = [];
-
-    if (days > 0) parts.push(`${days}d`);
-    if (hours > 0) parts.push(`${hours}h`);
-    if (minutes > 0) parts.push(`${minutes}m`);
-
-    if (days === 0 && hours === 0 && minutes === 0) {
-      parts.push(`${seconds}s`);
-    }
-    return parts.join(" ");
+  if (showInsights) {
+    return (
+      <div className="w-full h-full flex justify-start mt-4 flex-col">
+        <button
+          className="text-text flex w-full justify-center items-center cursor-pointer p-2 border-2 border-primary-dark hover:border-primary mb-2 hover:bg-primary-dark transition-all duration-300"
+          onClick={() => setShowInsights(false)}
+        >
+          <IoArrowBack className="size-4 mr-1" /> Back to Dashboard
+        </button>
+        <Insights />
+      </div>
+    );
   }
 
   return (
@@ -173,7 +181,7 @@ export default function Dashboard() {
         </div>
 
         {/* Day Picker */}
-        <ul className="relative w-full h-full flex-row grid grid-cols-7 mt-4 overflow-hidden border-2 border-transparent p-0 list-none">
+        <ul className="relative w-full h-full flex-row grid grid-cols-7 mt-2 overflow-hidden border-2 border-transparent p-0 list-none">
           <div
             className="absolute h-full transition-all duration-300 ease-in-out"
             style={{
@@ -196,12 +204,12 @@ export default function Dashboard() {
         </ul>
 
         {/* Chart & List Area */}
-        <div className="grid grid-cols-2 w-full h-full mt-4">
-          <div className={`flex flex-col row-1 self-start ${active === "block" ? "col-1 pr-4" : "col-2 pl-4"}`}>
+        <div className="grid grid-cols-2 w-full h-full mt-2 gap-4">
+          <div className={`flex flex-col row-1 self-start ${active === "block" ? "col-1" : "col-2"}`}>
             <div className="relative flex flex-col self-start">
               <div className="absolute inset-0 row flex items-center justify-center mb-6 pointer-events-none">
                 <span className="relative group text-secondary text-[0.625rem] cursor-help whitespace-nowrap pointer-events-auto">
-                  Total Time
+                  Today's Usage
                   <div className="z-10 absolute left-1/2 -translate-x-1/2 top-full mt-1 p-1 text-xs w-35 text-text bg-bg-light rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-pre-line pointer-events-none">
                     Sites with 1 minute or less will not displayed but are still counted
                   </div>
@@ -220,14 +228,14 @@ export default function Dashboard() {
           </div>
 
           <ul
-            className={`text-text flex-col row-span-full h-fit max-h-40 scroll-smooth overflow-y-auto ${
+            className={`text-text flex-col row-span-full h-fit max-h-43.5 scroll-smooth overflow-y-auto ${
               active === "block" ? "col-2 row-1 bg-transparent" : "col-1 row-1 bg-transparent"
             }`}
           >
             {(active === "block" ? websiteTimes : globalTimes).map((site) => (
               <li
                 key={site.domain}
-                className="flex group justify-between gap-1 items-center whitespace-nowrap hover:bg-bg-light text-xs leading-5 p-1"
+                className="flex group justify-between gap-1 items-center whitespace-nowrap hover:bg-bg-light text-xs p-1"
               >
                 <span
                   className="w-2 h-2 mr-1 shrink-0 flex items-center transition-all duration-300"
@@ -239,11 +247,44 @@ export default function Dashboard() {
             ))}
             {(active === "block" ? websiteTimes : globalTimes).length === 0 && (
               <li className="text-text p-1 text-xs w-full justify-center flex items-center">
-                No data collected for {currDay} during this week.
+                Data unavalibale for {currDay}.
               </li>
             )}
           </ul>
         </div>
+        {/* Insights and stats */}
+        <div className="grid grid-cols-2 flex-row mt-2">
+          <div className="flex text-text col-1 justify-center items-center p-1 flex-col">
+            <div className="flex flex-row whitespace-nowrap">
+              <TbFocus2 className="size-4 mr-1 text-secondary" />
+              <div className="ml-1 text-secondary font-bold">{focusScore}/100</div>
+            </div>
+            <div className="text-sub-text group relative cursor-help">
+              Lock In Score
+              <div className="z-10 absolute left-1/2 -translate-x-1/2 top-full mt-1 p-1 text-xs w-35 text-text bg-bg-light rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-pre-line pointer-events-none">
+                Calculated based off various factors
+              </div>
+            </div>{" "}
+          </div>
+          <div className="flex text-text col-2 justify-center items-center p-1 flex-col">
+            <div className="flex flex-row whitespace-nowrap">
+              <BsFire className="size-4 mr-1 text-secondary" />
+              <div className="ml-1 text-secondary font-bold">{streak}</div>
+            </div>
+            <div className="text-sub-text group relative cursor-help">
+              Daily Streak
+              <div className="z-10 absolute left-1/2 -translate-x-1/2 top-full mt-1 p-1 text-xs w-35 text-text bg-bg-light rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-pre-line pointer-events-none">
+                Keep your score above 75 to maintain your streak!
+              </div>
+            </div>{" "}
+          </div>
+        </div>
+        <button
+          className="text-text flex w-full justify-center items-center cursor-pointer mt-2 p-1 transition-all duration-300 hover:bg-primary-dark border-2 border-primary-dark hover:border-primary"
+          onClick={() => setShowInsights(true)}
+        >
+          More Insights <GrLineChart className="text-text size-4 ml-1" />
+        </button>
       </div>
     </div>
   );
