@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { PieChart } from "react-minimal-pie-chart";
 import Insights from "./Insights";
 import { formatTotalTime } from "../utils/Helpers";
-import { GrLineChart } from "react-icons/gr";
+import { PiMagnifyingGlassBold } from "react-icons/pi";
 import { IoArrowBack } from "react-icons/io5";
 import { type InsightsData } from "./Insights";
 import { BsFire } from "react-icons/bs";
@@ -47,6 +47,8 @@ export default function Dashboard() {
     { id: 6, short: "Fri", name: "Friday" },
     { id: 7, short: "Sat", name: "Saturday" },
   ];
+
+  const today = Days[new Date().getDay()].name;
 
   const [currDay, setDay] = useState<string>(Days[new Date().getDay()].name);
 
@@ -141,7 +143,7 @@ export default function Dashboard() {
     return (
       <div className="w-full h-full flex justify-start mt-4 flex-col">
         <button
-          className="text-text flex w-full justify-center items-center cursor-pointer p-2 border-2 border-primary-dark hover:border-primary mb-2 hover:bg-primary-dark transition-all duration-300"
+          className="text-text flex w-full justify-center items-center cursor-pointer p-1 border-2 border-primary-dark hover:border-primary hover:bg-primary-dark transition-all duration-300"
           onClick={() => setShowInsights(false)}
         >
           <IoArrowBack className="size-4 mr-1" /> Back to Dashboard
@@ -159,7 +161,8 @@ export default function Dashboard() {
           <div className="grid grid-cols-2 w-full">
             <button
               onClick={() => setActive("global")}
-              className={`col-1 p-1 flex justify-center cursor-pointer border-2 transition-all duration-300 ${
+              style={{ "--delay": `50ms` } as React.CSSProperties}
+              className={`animate-fade-up animate-stagger col-1 p-1 flex justify-center cursor-pointer border-2 transition-all duration-300 ${
                 active === "global"
                   ? "border-primary text-text"
                   : "bg-transparent hover:bg-primary-dark text-sub-text border-transparent"
@@ -169,7 +172,8 @@ export default function Dashboard() {
             </button>
             <button
               onClick={() => setActive("block")}
-              className={`col-2 p-1 flex justify-center cursor-pointer transition-all duration-300 border-2 ${
+              style={{ "--delay": `100ms` } as React.CSSProperties}
+              className={`animate-fade-up animate-stagger col-2 p-1 flex justify-center cursor-pointer transition-all duration-300 border-2 ${
                 active === "block"
                   ? "border-primary text-text"
                   : "bg-transparent hover:bg-primary-dark text-sub-text border-transparent"
@@ -181,16 +185,21 @@ export default function Dashboard() {
         </div>
 
         {/* Day Picker */}
-        <ul className="relative w-full h-full flex-row grid grid-cols-7 mt-2 overflow-hidden border-2 border-transparent p-0 list-none">
+        <ul className="relative w-full h-full flex-row grid grid-cols-7 mt-2 border-2 border-transparent p-0 list-none">
+          {/* <div className="absolute bottom-0 w-full h-0.5 bg-bg-light rounded-full" /> */}
           <div
-            className="absolute h-full transition-all duration-300 ease-in-out"
+            className="absolute bottom-0 left-0 h-0.5 bg-primary shadow-[0_0_15px_currentColor] text-primary transition-all duration-300 ease-in-out z-0"
             style={{
-              width: "14.28%",
+              width: "14.28%", // 100% divided by 7 days
               transform: `translateX(${Days.findIndex((d) => d.name === currDay) * 100}%)`,
             }}
           />
           {Days.map((day) => (
-            <li key={day.id} className="flex w-full items-center justify-center z-10">
+            <li
+              key={day.id}
+              style={{ "--delay": `${day.id * 50}ms` } as React.CSSProperties}
+              className="animate-fade-up animate-stagger flex w-full items-center justify-center z-10"
+            >
               <button
                 onClick={() => setDay(day.name)}
                 className={`w-full flex justify-center items-center cursor-pointer p-1 hover:text-text transition-all duration-300 ${
@@ -204,13 +213,16 @@ export default function Dashboard() {
         </ul>
 
         {/* Chart & List Area */}
-        <div className="grid grid-cols-2 w-full h-full mt-2 gap-4">
-          <div className={`flex flex-col row-1 self-start ${active === "block" ? "col-1" : "col-2"}`}>
-            <div className="relative flex flex-col self-start">
+        <div className="grid grid-cols-2 w-full mt-2 gap-2">
+          <div className={`flex flex-col row-1 self-start p-1 ${active === "block" ? "col-1" : "col-2"}`}>
+            <div className="animate-fade-in relative flex flex-col self-start">
               <div className="absolute inset-0 row flex items-center justify-center mb-6 pointer-events-none">
-                <span className="relative group text-secondary text-[0.625rem] cursor-help whitespace-nowrap pointer-events-auto">
-                  Today's Usage
-                  <div className="z-10 absolute left-1/2 -translate-x-1/2 top-full mt-1 p-1 text-xs w-35 text-text bg-bg-light rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-pre-line pointer-events-none">
+                <span
+                  key={`${active}${currDay}`}
+                  className="z-10 relative group text-secondary text-[10px] cursor-help whitespace-nowrap pointer-events-auto"
+                >
+                  {currDay !== today ? `${currDay}` : "Today"}'s Usage
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 p-1 text-xs w-35 text-text bg-bg-light rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-pre-line pointer-events-none">
                     Sites with 1 minute or less will not displayed but are still counted
                   </div>
                 </span>
@@ -218,72 +230,88 @@ export default function Dashboard() {
               <div className="absolute pointer-events-none inset-0 flex items-center mt-2 justify-center text-text text-lg transition-all duration-300">
                 {active === "block" ? sumWebsiteTime() : sumGlobalTime()}
               </div>
-              <PieChart
-                data={active === "block" ? chartData : chartGlobalData}
-                lineWidth={25}
-                paddingAngle={1}
-                lengthAngle={-360}
-              />
+              <div key={`${active}${currDay}`} className="animate-pie-reveal animate-circular-wipe pointer-events-none">
+                <PieChart
+                  data={active === "block" ? chartData : chartGlobalData}
+                  lineWidth={25}
+                  paddingAngle={1}
+                  lengthAngle={-360}
+                />
+              </div>
             </div>
           </div>
 
-          <ul
-            className={`text-text flex-col row-span-full h-fit max-h-43.5 scroll-smooth overflow-y-auto ${
-              active === "block" ? "col-2 row-1 bg-transparent" : "col-1 row-1 bg-transparent"
-            }`}
-          >
-            {(active === "block" ? websiteTimes : globalTimes).map((site) => (
-              <li
-                key={site.domain}
-                className="flex group justify-between gap-1 items-center whitespace-nowrap hover:bg-bg-light text-xs p-1"
-              >
-                <span
-                  className="w-2 h-2 mr-1 shrink-0 flex items-center transition-all duration-300"
-                  style={{ backgroundColor: site.color }}
-                ></span>
-                <span className="text-sub-text group-hover:text-text truncate">{site.domain}</span>
-                <span className="text-text">{formatTotalTime(site.seconds)}</span>
-              </li>
-            ))}
-            {(active === "block" ? websiteTimes : globalTimes).length === 0 && (
-              <li className="text-text p-1 text-xs w-full justify-center flex items-center">
-                Data unavalibale for {currDay}.
-              </li>
-            )}
-          </ul>
+          <div className={`relative row-span-full ${active === "block" ? "col-2 row-1" : "col-1 row-1"}`}>
+            <ul className="absolute inset-0 overflow-y-auto text-text flex flex-col scroll-smooth">
+              {(active === "block" ? websiteTimes : globalTimes).map((site, index) => (
+                <li
+                  key={`${active}${index}${site.domain}`}
+                  style={{ "--delay": `${index * 50}ms` } as React.CSSProperties}
+                  className="flex animate-fade-up animate-stagger group justify-between gap-1 items-center whitespace-nowrap hover:bg-bg-light text-xs p-1.25"
+                >
+                  <span className="flex flex-row items-center truncate">
+                    <span
+                      className="w-2 h-2 mr-1 shrink-0 flex items-center transition-all duration-300"
+                      style={{ backgroundColor: site.color }}
+                    ></span>
+                    <span className="text-sub-text group-hover:text-text truncate">{site.domain}</span>
+                  </span>
+                  <span className="text-text">{formatTotalTime(site.seconds)}</span>
+                </li>
+              ))}
+              {(active === "block" ? websiteTimes : globalTimes).length === 0 && (
+                <li className="text-text p-1 text-xs w-full justify-center flex items-center">
+                  Data unavalibale for {currDay}.
+                </li>
+              )}
+            </ul>
+          </div>
         </div>
         {/* Insights and stats */}
         <div className="grid grid-cols-2 flex-row mt-2">
-          <div className="flex text-text col-1 justify-center items-center p-1 flex-col">
-            <div className="flex flex-row whitespace-nowrap">
+          <div className="flex text-text col-1 justify-center items-center flex-col">
+            <div
+              style={{ "--delay": `50ms` } as React.CSSProperties}
+              className="animate-fade-up animate-stagger flex flex-row whitespace-nowrap"
+            >
               <TbFocus2 className="size-4 mr-1 text-secondary" />
               <div className="ml-1 text-secondary font-bold">{focusScore}/100</div>
             </div>
-            <div className="text-sub-text group relative cursor-help">
+            <div
+              style={{ "--delay": `100ms` } as React.CSSProperties}
+              className="z-999 animate-fade-up animate-stagger text-sub-text group relative cursor-help"
+            >
               Lock In Score
-              <div className="z-10 absolute left-1/2 -translate-x-1/2 top-full mt-1 p-1 text-xs w-35 text-text bg-bg-light rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-pre-line pointer-events-none">
-                Calculated based off various factors
+              <div className="absolute left-1/2 -translate-x-1/2 -translate-y-3 top-full p-1 text-xs w-35 text-text bg-bg-light rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-pre-line pointer-events-none">
+                Higher is better. Stay off blocked websites to increase score!
               </div>
-            </div>{" "}
+            </div>
           </div>
-          <div className="flex text-text col-2 justify-center items-center p-1 flex-col">
-            <div className="flex flex-row whitespace-nowrap">
+          <div className="flex text-text col-2 justify-center items-center flex-col">
+            <div
+              style={{ "--delay": `50ms` } as React.CSSProperties}
+              className="animate-fade-up animate-stagger flex flex-row whitespace-nowrap"
+            >
               <BsFire className="size-4 mr-1 text-secondary" />
               <div className="ml-1 text-secondary font-bold">{streak}</div>
             </div>
-            <div className="text-sub-text group relative cursor-help">
+            <div
+              style={{ "--delay": `100ms` } as React.CSSProperties}
+              className="animate-fade-up animate-stagger z-999 text-sub-text group relative cursor-help"
+            >
               Daily Streak
-              <div className="z-10 absolute left-1/2 -translate-x-1/2 top-full mt-1 p-1 text-xs w-35 text-text bg-bg-light rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-pre-line pointer-events-none">
-                Keep your score above 75 to maintain your streak!
+              <div className="absolute left-1/2 -translate-x-1/2 -translate-y-3 top-full p-1 text-xs w-35 text-text bg-bg-light rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-pre-line pointer-events-none">
+                Keep your score above 80 to maintain your streak!
               </div>
-            </div>{" "}
+            </div>
           </div>
         </div>
         <button
-          className="text-text flex w-full justify-center items-center cursor-pointer mt-2 p-1 transition-all duration-300 hover:bg-primary-dark border-2 border-primary-dark hover:border-primary"
+          style={{ "--delay": `100ms` } as React.CSSProperties}
+          className="animate-fade-up animate-stagger text-text flex w-full justify-center items-center cursor-pointer mt-2 p-1 transition-all duration-300 hover:bg-primary-dark border-2 border-primary-dark hover:border-primary"
           onClick={() => setShowInsights(true)}
         >
-          More Insights <GrLineChart className="text-text size-4 ml-1" />
+          More Insights <PiMagnifyingGlassBold className="text-text size-4 ml-1" />
         </button>
       </div>
     </div>

@@ -102,13 +102,13 @@ input::-webkit-inner-spin-button {
 
 [data-theme="mono"] {
   --brand-text: oklch(100% 0.00011 271.152);
-  --brand-sub-text: oklch(77.944% 0.00009 271.152);
-  --brand-primary: oklch(65.666% 0.00007 271.152);
+  --brand-sub-text: oklch(66.984% 0.00008 271.152);
+  --brand-primary: oklch(75.268% 0.00007 271.152);
   --brand-primary-dark: oklch(45.316% 0.00005 271.152);
-  --brand-bg: oklch(22.213% 0.00003 271.152);
-  --brand-bg-dark: oklch(16.842% 0.00002 271.152);
+  --brand-bg: oklch(0% 0 0);
+  --brand-bg-dark: oklch(35.233% 0.00004 271.152);
   --brand-bg-light: oklch(35.233% 0.00004 271.152);
-  --brand-secondary: oklch(65.666% 0.00007 271.152);
+  --brand-secondary: oklch(75.268% 0.00007 271.152);
 }
 
 [data-theme="jade"] {
@@ -150,4 +150,121 @@ input::-webkit-inner-spin-button {
 
 .animate-slide-in-right {
   animation: slideInRight 1s ease-in-out forwards;
+}
+
+/* tailwind animation for lists */
+@theme {
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  --animate-fade-up: fade-up 0.5s ease-out both;
+}
+
+.animate-stagger {
+  animation-delay: var(--delay, 0ms);
+}
+
+/* animation for pie chart */
+
+@property --reveal-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@theme {
+  @keyframes circle-fill {
+    from {
+      --reveal-angle: 0deg;
+    }
+    to {
+      --reveal-angle: 360deg;
+    }
+  }
+
+  --animate-pie-reveal: circle-fill 1s ease-in-out both;
+}
+
+.animate-circular-wipe {
+  mask-image: conic-gradient(black var(--reveal-angle), transparent 0deg);
+  mask-position: center;
+  mask-repeat: no-repeat;
+
+  -webkit-mask-image: conic-gradient(from 90deg, black var(--reveal-angle), transparent 0deg);
+}
+
+@theme {
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  --animate-fade-in: fade-in 0.6s ease-out both;
+}
+
+@theme {
+  @keyframes fade-in-out {
+    0% {
+      opacity: 0;
+    }
+    /* 0% to 20% is the slow build up (0.4s) */
+    20% {
+      opacity: 1;
+    }
+    /* Hold perfectly still until 80% */
+    80% {
+      opacity: 1;
+    }
+    /* Smooth exit over the last 0.4s */
+    100% {
+      opacity: 0;
+    }
+  }
+
+  /* Use a cubic-bezier for a professional "buildup" feel */
+  --animate-fade-in-out: fade-in-out 2s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@theme {
+  @keyframes shake-fade {
+    0% {
+      opacity: 0;
+      transform: translate(0%, 10px);
+    }
+    5% {
+      transform: translate(2%, 0);
+    }
+    10% {
+      transform: translate(-2%, 0);
+    }
+    15% {
+      transform: translate(1%, 0);
+    }
+    20% {
+      opacity: 1;
+      transform: translate(0%, 0);
+    }
+    80% {
+      opacity: 1;
+      transform: translate(0%, 0);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(0%, 10px);
+    }
+  }
+
+  --animate-shake-fade: shake-fade 2s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  --animate-shake: shake;
 }

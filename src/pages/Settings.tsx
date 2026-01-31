@@ -123,7 +123,8 @@ export default function Settings() {
         </div>
 
         <div
-          className={`grid grid-cols-3 w-full border-2 border-bg-light justify-center transition-all duration-300 ${active ? "border-primary" : "border-bg-light"}`}
+          style={{ "--delay": `50ms` } as React.CSSProperties}
+          className={`animate-fade-up animate-stagger grid grid-cols-3 w-full border-2 border-bg-light justify-center transition-all duration-300 ${active ? "border-primary" : "border-bg-light"}`}
         >
           {/* Hours Column */}
           <div className="grid grid-cols-2 col-1 w-full">
@@ -176,9 +177,15 @@ export default function Settings() {
             {active ? "Enabled" : "Disabled"}
           </button>
         </div>
-        <p className="flex justify-center mb-4 mt-1 text-sub-text">Maximum time allowed</p>
+        <p
+          style={{ "--delay": `100ms` } as React.CSSProperties}
+          className="animate-fade-up animate-stagger flex justify-center mb-4 mt-1 text-sub-text"
+        >
+          Maximum time allowed
+        </p>
         <div
-          className={`relative grid grid-cols-3 items-center w-full border-2 transition-all duration-300 ease-in-out ${action === "Disabled" ? "border-bg-light" : "border-primary"} bg-transparent overflow-hidden`}
+          style={{ "--delay": `50ms` } as React.CSSProperties}
+          className={`animate-fade-up animate-stagger relative grid grid-cols-3 items-center w-full border-2 transition-all duration-300 ease-in-out ${action === "Disabled" ? "border-bg-light" : "border-primary"} bg-transparent overflow-hidden`}
         >
           {/* Sliding button */}
           <div
@@ -206,13 +213,17 @@ export default function Settings() {
         </div>
         <div>
           {buttonStates.map((b) => (
-            <p className={`flex justify-center items-center mt-1 ${action === b.state ? "text-sub-text" : "hidden"}`}>
+            <p
+              style={{ "--delay": `100ms` } as React.CSSProperties}
+              className={`animate-fade-up animate-stagger flex justify-center items-center mt-1 ${action === b.state ? "text-sub-text" : "hidden"}`}
+            >
               {b.description}
             </p>
           ))}
         </div>
         <div
-          className={`grid grid-cols-2 w-full border-2 justify-center mt-4 transition-all duration-300 ${afkActive ? "border-primary" : "border-bg-light"}`}
+          style={{ "--delay": `50ms` } as React.CSSProperties}
+          className={`animate-fade-up animate-stagger grid grid-cols-2 w-full border-2 justify-center mt-4 transition-all duration-300 ${afkActive ? "border-primary" : "border-bg-light"}`}
         >
           {/* AFK Minutes Input */}
           <div className="grid grid-cols-2 col-1 w-full">
@@ -244,7 +255,12 @@ export default function Settings() {
             {afkActive ? "Enabled" : "Disabled"}
           </button>
         </div>
-        <span className="flex justify-center mt-1 text-sub-text">Total time of inactivity before AFK state</span>
+        <span
+          style={{ "--delay": `100ms` } as React.CSSProperties}
+          className="animate-fade-up animate-stagger flex justify-center mt-1 text-sub-text"
+        >
+          Total time of inactivity before AFK state
+        </span>
       </div>
     </div>
   );

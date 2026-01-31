@@ -9,6 +9,7 @@ import { CgPlayListAdd } from "react-icons/cg";
 import { CgPlayListRemove } from "react-icons/cg";
 import { SiKofi } from "react-icons/si";
 import { MdHelp } from "react-icons/md";
+import Typewriter from "typewriter-effect";
 
 function App() {
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -18,6 +19,25 @@ function App() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [checkValid, setCheckValid] = useState<boolean>();
   const [currTheme, setTheme] = useState<string>("default-dark");
+  const [quote, setQuote] = useState<string>("");
+
+  const randomQuotes = [
+    "Focus on the process, not just the results",
+    "Your focus determines your reality",
+    "What you focus on grows",
+    "Less distraction, more action",
+    "Focus on the journey, not the destination",
+    "One thing at a time",
+    "Focus on your goals, not your fear",
+    "Do what you can, with what you have, where you are",
+    "Don't watch the clock; do what it does. Keep going",
+    "Eliminate distractions",
+  ];
+
+  const genRandQuote = () => {
+    const num = Math.floor(Math.random() * randomQuotes.length);
+    setQuote(randomQuotes[num]);
+  };
 
   const themes = [
     { id: 1, theme: "default-dark", name: "Dark" },
@@ -64,6 +84,7 @@ function App() {
         setWebsite(data.website as Website[]);
         setTheme(data.theme as string);
         setIsLoaded(true);
+        genRandQuote();
       } catch (error) {
         console.log(error);
       }
@@ -145,19 +166,19 @@ function App() {
     switch (activeTab) {
       case "Dashboard":
         return (
-          <div className="flex-1">
+          <div className="flex-1 overflow-hidden flex flex-col relative">
             <Dashboard />
           </div>
         );
       case "Websites":
         return (
-          <div className="flex-1">
+          <div className="flex-1 overflow-hidden flex flex-col relative">
             <Websites website={website} setWebsite={handleUpdateWebsites} />
           </div>
         );
       case "Settings":
         return (
-          <div className="flex-1">
+          <div className="flex-1 overflow-hidden flex flex-col relative">
             <Settings />
           </div>
         );
@@ -168,7 +189,7 @@ function App() {
 
   // visual safe guard
   if (!isLoaded) {
-    return <div className="bg-primary"></div>;
+    return;
   }
 
   return (
@@ -176,29 +197,57 @@ function App() {
       data-theme={currTheme}
       className="flex p-4 w-full h-full flex-col justify-start border-2 border-text items-center bg-bg border-solid outline-none"
     >
-      <div className="relative w-full justify-center flex">
-        <h1 className="text-text w-full flex justify-center text-2xl font-bold mb-2 tracking-widest z-10">LOCK IN.</h1>
-        <h1 className="absolute text-primary w-full flex justify-center text-2xl font-bold mb-4 tracking-widest translate-y-0.5 translate-x-0.5">
-          LOCK IN.
+      <div className="relative w-full justify-center items-center flex flex-col">
+        <h1 className="text-text w-full flex justify-center items-center text-2xl font-bold tracking-widest z-10 leading-none mb-1">
+          <Typewriter
+            onInit={(typewriter) => {
+              typewriter.typeString("LOCK IN").pauseFor(1000).start();
+            }}
+            options={{
+              skipAddStyles: true,
+              cursor: ".",
+            }}
+          />
         </h1>
+        {/* <h1 className="absolute text-primary w-full flex justify-center text-2xl font-bold mb-4 tracking-widest translate-y-0.5 translate-x-0.5">
+          LOCK IN.
+        </h1> */}
+        <div>
+          <p className="text-sub-text w-full flex items-center justify-center mb-2 text-xs tracking-wide">
+            <Typewriter
+              onInit={(typewriter) => {
+                typewriter.typeString(`"${quote}"`).pauseFor(1000).start();
+              }}
+              options={{
+                skipAddStyles: true,
+                cursor: `.`,
+              }}
+            />
+          </p>
+        </div>
       </div>
       {/* Add current site button */}
       <div className="grid grid-cols-2 w-full gap-2">
-        <div className="col-1 overflow-hidden">
+        <div
+          className="col-1 overflow-hidden animate-fade-up animate-stagger"
+          style={{ "--delay": `50ms` } as React.CSSProperties}
+        >
           {currSite && checkValid && (
             <button
-              className={`overflow-hidden border-2 text-text p-1 w-full border-bg-light cursor-pointer flex items-center hover:border-secondary hover:bg-primary transition-all duration-300 justify-center`}
+              className={`overflow-hidden border-2 text-text p-1 w-full border-bg-light flex items-center transition-all duration-300 justify-center`}
               onClick={addCurr}
             >
               {website.some((site) => site.text === currSite) ? (
                 <>
                   <CgPlayListRemove className="size-4 mr-1" />
-                  <span className="flex justfiy-center truncate">Site already added</span>
+                  <span className="flex justfiy-center">Site already added</span>
                 </>
               ) : (
                 <>
                   <CgPlayListAdd className="size-4 mr-1" />
-                  <span className="flex justify-center truncate">{currSite}?</span>
+                  <span className="flex justify-center truncate hover:border-secondary hover:bg-primary cursor-pointer">
+                    {currSite}?
+                  </span>
                 </>
               )}
             </button>
@@ -221,7 +270,10 @@ function App() {
           {/* <p className="flex justify-center text-sub-text">Quick add</p> */}
         </div>
         {/* Global Switch */}
-        <div className="col-2 grid grid-cols-2">
+        <div
+          style={{ "--delay": `100ms` } as React.CSSProperties}
+          className="col-2 grid grid-cols-2 animate-fade-up animate-stagger"
+        >
           <button
             onClick={() => handleToggleGlobal()}
             className={`relative col-span-2 w-full flex items-center border-2 ${globalSwitch ? "border-primary" : "border-secondary"} cursor-pointer overflow-hidden transition-all duration-300`}
@@ -256,9 +308,10 @@ function App() {
         <ul className="grid grid-cols-3 items-start w-full">
           {navItems.map((item) => (
             <li
+              style={{ "--delay": `${item.key * 50}ms` } as React.CSSProperties}
               className={`flex justify-center items-center col-${
                 item.key
-              } cursor-pointer border-solid px-2 py-1 hover:bg-primary text-text transition-all duration-300 ${
+              } cursor-pointer animate-fade-up animate-stagger border-solid px-2 py-1 hover:bg-primary text-text transition-all duration-300 ${
                 activeTab === item.name ? "bg-primary" : "hover:bg-primary-dark"
               }`}
               onClick={() => setActiveTab(item.name)}
@@ -269,19 +322,22 @@ function App() {
           ))}
         </ul>
       </nav>
-      <div className="flex w-full h-full">{renderContent()}</div>
-      <div className="grid grid-cols-2 w-full mt-4">
-        {/* 1. Remove the middle wrapper div so buttons are direct children of the grid */}
-        {/* 2. Use a fixed grid-cols-3 or inline style for the themes */}
+      <div className="w-full flex-1 min-h-0 overflow-hidden flex flex-col">{renderContent()}</div>
+      <div className="grid grid-cols-2 w-full mt-4 shrink-0">
         <div
-          className="grid col-span-full text-text w-full border-2 border-primary-dark overflow-hidden"
-          style={{ gridTemplateColumns: `repeat(${themes.length}, minmax(0, 1fr))` }}
+          className="animate-fade-up animate-stagger grid col-span-full text-text w-full border-2 border-primary-dark overflow-hidden"
+          style={
+            {
+              gridTemplateColumns: `repeat(${themes.length}, minmax(0, 1fr))`,
+              "--delay": "50ms",
+            } as React.CSSProperties
+          }
         >
-          {themes.map((theme) => (
+          {themes.map((theme, index) => (
             <button
               key={theme.id}
-              className={`cursor-pointer p-1 flex justify-center transition-all duration-300 ${
-                // Highlight the active theme
+              style={{ "--delay": `${index * 50}ms` } as React.CSSProperties}
+              className={`animate-fade-up animate-stagger cursor-pointer p-1 flex justify-center transition-all duration-300 ${
                 currTheme === theme.theme ? "bg-primary text-text" : "hover:bg-primary-dark text-sub-text"
               }`}
               onClick={() => handleTheme(theme.theme)}
@@ -293,10 +349,16 @@ function App() {
 
         <div className="col-span-full mt-2">
           <div className="flex flex-row gap-2">
-            <div className="flex flex-1 border-2 p-1 cursor-pointer transition-all duration-300 border-primary-dark hover:border-primary hover:bg-primary-dark justify-center items-center text-text">
+            <div
+              style={{ "--delay": `50ms` } as React.CSSProperties}
+              className="animate-fade-up animate-stagger flex flex-1 border-2 p-1 cursor-pointer transition-all duration-300 border-primary-dark hover:border-primary hover:bg-primary-dark justify-center items-center text-text"
+            >
               <MdHelp className="size-4 mr-1" /> Help
             </div>
-            <div className="flex flex-1 flex-col items-center justify-between border-2 p-1 cursor-pointer transition-all duration-300 hover:border-primary border-primary-dark hover:bg-primary-dark">
+            <div
+              style={{ "--delay": `100ms` } as React.CSSProperties}
+              className="animate-fade-up animate-stagger flex flex-1 flex-col items-center justify-between border-2 p-1 cursor-pointer transition-all duration-300 hover:border-primary border-primary-dark hover:bg-primary-dark"
+            >
               <div className="flex text-text">
                 <SiKofi className="size-4 mr-1" /> Donate
               </div>
