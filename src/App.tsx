@@ -10,6 +10,7 @@ import { CgPlayListRemove } from "react-icons/cg";
 import { SiKofi } from "react-icons/si";
 import { MdHelp } from "react-icons/md";
 import Typewriter from "typewriter-effect";
+import { IoMdColorPalette } from "react-icons/io";
 
 function App() {
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -20,6 +21,7 @@ function App() {
   const [checkValid, setCheckValid] = useState<boolean>();
   const [currTheme, setTheme] = useState<string>("default-dark");
   const [quote, setQuote] = useState<string>("");
+  const [showTheme, setShowTheme] = useState(false);
 
   const randomQuotes = [
     "Focus on the process, not just the results",
@@ -308,14 +310,14 @@ function App() {
           {/* <p className="col-span-2 flex justify-center text-sub-text">Extension Toggle</p> */}
         </div>
       </div>
-      <nav className="w-full h-fit mt-4">
-        <ul className="grid grid-cols-3 items-start w-full">
+      <nav className="w-full h-fit my-3.5">
+        <ul className="grid grid-cols-3 items-start w-full border-2 border-primary animate-fade-in">
           {navItems.map((item) => (
             <li
               style={{ "--delay": `${item.key * 50}ms` } as React.CSSProperties}
               className={`flex justify-center items-center col-${
                 item.key
-              } cursor-pointer animate-fade-up animate-stagger border-solid px-2 py-1 hover:bg-primary text-text transition-all duration-300 font-semibold uppercase tracking-wide ${
+              } cursor-pointer animate-fade-up animate-stagger p-1 hover:bg-primary text-text transition-all duration-300 font-semibold uppercase tracking-wide ${
                 activeTab === item.name ? "bg-primary" : "hover:bg-primary-dark"
               }`}
               onClick={() => setActiveTab(item.name)}
@@ -327,29 +329,49 @@ function App() {
         </ul>
       </nav>
       <div className="w-full flex-1 min-h-0 overflow-hidden flex flex-col">{renderContent()}</div>
+
+      {/* Footer content */}
       <div className="grid grid-cols-2 w-full mt-4 shrink-0">
-        <div
-          className="animate-fade-up animate-stagger grid col-span-full text-text w-full border-2 border-primary-dark overflow-hidden"
-          style={
-            {
-              gridTemplateColumns: `repeat(${themes.length}, minmax(0, 1fr))`,
-              "--delay": "50ms",
-            } as React.CSSProperties
-          }
-        >
-          {themes.map((theme, index) => (
-            <button
-              key={theme.id}
-              style={{ "--delay": `${index * 50}ms` } as React.CSSProperties}
-              className={`animate-fade-up animate-stagger cursor-pointer p-1 flex justify-center transition-all duration-300 ${
-                currTheme === theme.theme ? "bg-primary text-text" : "hover:bg-primary-dark text-sub-text"
-              }`}
-              onClick={() => handleTheme(theme.theme)}
-            >
-              {theme.name}
-            </button>
-          ))}
-        </div>
+        {!showTheme && (
+          <div
+            onClick={() => setShowTheme(true)}
+            style={
+              {
+                "--delay": "50ms",
+              } as React.CSSProperties
+            }
+            className="cursor-pointer hover:bg-primary-dark hover:border-primary transition-all duration-300 animate-fade-up animate-stagger grid col-span-full text-text w-full border-2 border-primary-dark overflow-hidden p-1"
+          >
+            <span className="flex flex-row justify-center items-center">
+              <IoMdColorPalette className="size-4 mr-1" /> Current Theme:{" "}
+              {themes.find((i) => i.theme === currTheme)?.name}
+            </span>
+          </div>
+        )}
+        {showTheme && (
+          <div
+            className="animate-fade-up animate-stagger grid col-span-full text-text w-full border-2 border-primary-dark overflow-hidden"
+            style={
+              {
+                gridTemplateColumns: `repeat(${themes.length}, minmax(0, 1fr))`,
+                "--delay": "50ms",
+              } as React.CSSProperties
+            }
+          >
+            {themes.map((theme, index) => (
+              <button
+                key={theme.id}
+                style={{ "--delay": `${index * 50}ms` } as React.CSSProperties}
+                className={`animate-fade-up animate-stagger cursor-pointer p-1 flex justify-center transition-all duration-300 ${
+                  currTheme === theme.theme ? "bg-primary text-text" : "hover:bg-primary-dark text-sub-text"
+                }`}
+                onClick={() => handleTheme(theme.theme)}
+              >
+                {theme.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="col-span-full mt-2">
           <div className="flex flex-row gap-2">

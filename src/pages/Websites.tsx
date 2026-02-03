@@ -66,7 +66,7 @@ export default function Websites({ website, setWebsite }: Props) {
   };
 
   return (
-    <div className="w-full h-full flex flex-col mt-4 overflow-hidden">
+    <div className="w-full h-full flex flex-col overflow-hidden">
       {/* Input field */}
       <div className="border-bg-light border-2 animate-fade-in flex flex-col h-fit overflow-hidden">
         <div className="w-full flex flex-row gap-2 shrink-0">

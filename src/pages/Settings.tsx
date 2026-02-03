@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { checkBlock } from "../utils/Helpers";
 import { isValidSyntax } from "../utils/Helpers";
+import { MdBlock } from "react-icons/md";
 
 export default function Settings() {
   const buttonStates = [
-    { id: 1, state: "Block", description: "Blocks content viewing" },
-    { id: 2, state: "Redirect", description: "Redirects to a chosen site" },
+    { id: 1, state: "Redirect", description: "Redirects to a chosen site" },
+    { id: 2, state: "Block", description: "Blocks content viewing" },
     { id: 3, state: "Warn", description: "Notifies when your time is up" },
     { id: 4, state: "Disabled", description: "Website action is disabled" },
   ];
@@ -14,12 +15,13 @@ export default function Settings() {
   const [time, setTime] = useState({ hours: 0, minutes: 0 });
   const [active, setActive] = useState<boolean | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [settingTab, setSettingTab] = useState<string>("Basic");
+  //const [settingTab, setSettingTab] = useState<string>("Basic");
   const [afkTimer, setAfkTimer] = useState({ minutes: 1 });
   const [afkActive, setAfkActive] = useState<boolean | null>(null);
   const [redirect, setRedirect] = useState<string>("");
   const [isAlert, setAlert] = useState<string>("");
   const [savedRedirect, setSavedRedirect] = useState<string>("");
+  const [nuke, setNuke] = useState(false);
 
   function convertTime(totalSec: number) {
     const hour = Math.floor(totalSec / 3600);
@@ -30,13 +32,14 @@ export default function Settings() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const { maxTime, action, active, afkTime, afkActive, redirect } = await chrome.storage.sync.get([
+        const { maxTime, action, active, afkTime, afkActive, redirect, nuke } = await chrome.storage.sync.get([
           "maxTime",
           "action",
           "active",
           "afkTime",
           "afkActive",
           "redirect",
+          "nuke",
         ]);
 
         // grab button states and update ui
@@ -45,6 +48,7 @@ export default function Settings() {
         setAfkActive(afkActive as boolean);
         setRedirect(redirect as string);
         setSavedRedirect(redirect as string);
+        setNuke(nuke as boolean);
 
         const { min: afkMin } = convertTime(afkTime as number);
         setAfkTimer({ minutes: afkMin });
@@ -93,6 +97,14 @@ export default function Settings() {
     chrome.storage.sync.set({ action: newAction });
   };
 
+  // helper function to update and save nuke setting
+  const updateNuke = (shouldNuke: boolean) => {
+    const newVal = !shouldNuke;
+    setNuke(newVal);
+    return newVal;
+  };
+
+  // handles saving redirect site
   const handleKeyDown = async () => {
     const valid = await isValidSyntax(redirect);
     if (!valid) {
@@ -151,8 +163,8 @@ export default function Settings() {
   return (
     <div>
       <div className="text-text">
-        <div className="flex flex-row items-center w-full h-fit">
-          <div className="grid-cols-2 grid my-4 w-full">
+        {/* <div className="flex flex-row items-center w-full h-fit">
+          <div className="grid-cols-2 grid w-full">
             <button
               onClick={() => setSettingTab("Basic")}
               className={`col-1 flex justify-center p-1 cursor-pointer transition-all duration-300 border-2 ${
@@ -174,8 +186,12 @@ export default function Settings() {
               Preset Modes
             </button>
           </div>
+        </div> */}
+        <div className="text-text w-full flex justify-center font-semibold tracking-wide uppercase items-center">
+          <MdBlock className="size-4 mr-1" />
+          Block Settings
         </div>
-
+        <div className="text-sub-text text-xs mb-4 flex justify-center">Configure your websites to stay locked in</div>
         <div
           style={{ "--delay": `50ms` } as React.CSSProperties}
           className={`animate-fade-up animate-stagger grid grid-cols-3 w-full border-2 border-bg-light justify-center transition-all duration-300 ${active ? "border-primary" : "border-bg-light"}`}
@@ -235,7 +251,7 @@ export default function Settings() {
         </div>
         <p
           style={{ "--delay": `100ms` } as React.CSSProperties}
-          className="animate-fade-up animate-stagger flex justify-center mb-2 mt-1 text-sub-text"
+          className="animate-fade-up animate-stagger flex justify-center mb-2 text-sub-text"
         >
           Daily maximum time allowed
         </p>
@@ -255,7 +271,7 @@ export default function Settings() {
             <button
               key={b.id}
               onClick={() => updateAction(b.state)}
-              className={`z-10 flex justify-center items-center p-1 hover:bg-primary-dark cursor-pointer transition-all duration-300 col-${b.id} ${b.state === action ? "text-text" : "text-sub-text"} ${action !== "Block" && action !== "Warn" && action !== "Redirect" ? "border-bg-light" : ""}`}
+              className={`z-10 flex justify-center items-center p-1 hover:bg-primary-dark cursor-pointer transition-all duration-300 col-${b.id} ${b.state === action && action !== "Disabled" ? "text-text" : "text-sub-text"} ${action !== "Block" && action !== "Warn" && action !== "Redirect" ? "border-bg-light" : ""}`}
             >
               {b.state}
             </button>
@@ -265,12 +281,13 @@ export default function Settings() {
           {buttonStates.map((b) => (
             <p
               style={{ "--delay": `100ms` } as React.CSSProperties}
-              className={`animate-fade-up animate-stagger flex justify-center items-center mt-1 ${action === b.state ? "text-sub-text" : "hidden"}`}
+              className={`animate-fade-up animate-stagger flex justify-center items-center mb-2 ${action === b.state ? "text-sub-text" : "hidden"}`}
             >
               {b.description}
             </p>
           ))}
         </div>
+        {/* Redirect setting */}
         {action === "Redirect" && (
           <div>
             <input
@@ -285,31 +302,59 @@ export default function Settings() {
             />
             <span
               style={{ "--delay": `100ms` } as React.CSSProperties}
-              className="animate-fade-up animate-stagger flex justify-center mt-1 text-sub-text"
+              className="animate-fade-up animate-stagger flex justify-center mb-2 text-sub-text"
             >
               Enter a valid website to redirect
             </span>
           </div>
         )}
+        {/* Block options */}
         {action === "Block" && (
-          <div>
-            <button
-              style={{ "--delay": `50ms` } as React.CSSProperties}
-              className={`cursor-pointer animate-fade-up justify-center animate-stagger text-text w-full flex border-2 border-primary-dark p-1 mt-2 transition-all duration-300 hover:bg-primary-dark outline-none`}
-            >
-              Nuke
-            </button>
+          <div style={{ "--delay": `50ms` } as React.CSSProperties} className="animate-stagger animate-fade-up">
+            <div className="col-2 grid grid-cols-2 p-2 bg-bg-dark">
+              <div className="col-1 w-full flex flex-col">
+                <span className="flex items-center justify-start text-text leading-tight">Instant Purge</span>
+                <span className="text-sub-text text-[10px] leading-tight">Tabs will be instantly deleted</span>
+              </div>
+              <div className="col-2 grid grid-cols-2">
+                <button
+                  onClick={() => chrome.storage.sync.set({ nuke: updateNuke(nuke as boolean) })}
+                  className={`relative col-span-2 w-full flex items-center border-2 ${nuke ? "border-primary" : "border-primary"} cursor-pointer overflow-hidden transition-all duration-300`}
+                >
+                  <div
+                    className={`absolute top-0 left-0 h-full w-1/2 transition-transform duration-300 ease-in-out ${
+                      nuke ? "translate-x-0 bg-primary-dark" : "translate-x-full bg-primary-dark"
+                    }`}
+                  />
+                  <div
+                    className={`z-10 p-1 flex-1 flex items-center justify-center transition-colors duration-300 ${
+                      nuke ? "text-text hover:bg-primary-dark" : "text-sub-text hover:bg-primary-dark"
+                    }`}
+                  >
+                    Enabled
+                  </div>
+                  <div
+                    className={`z-10 p-1 flex-1 flex items-center justify-center transition-colors duration-300 ${
+                      !nuke ? "text-text hover:bg-primary-dark" : "text-sub-text hover:bg-primary-dark"
+                    }`}
+                  >
+                    Disabled
+                  </div>
+                </button>
+              </div>
+            </div>
+
             <span
               style={{ "--delay": `100ms` } as React.CSSProperties}
-              className="animate-fade-up animate-stagger flex justify-center mt-1 text-sub-text"
+              className="animate-fade-up animate-stagger flex justify-center mb-2 text-sub-text"
             >
-              No warning or notification just complete deletion
+              Optional settings for Block
             </span>
           </div>
         )}
         <div
           style={{ "--delay": `50ms` } as React.CSSProperties}
-          className={`animate-fade-up animate-stagger grid grid-cols-2 w-full border-2 justify-center mt-2 transition-all duration-300 ${afkActive ? "border-primary" : "border-bg-light"}`}
+          className={`animate-fade-up animate-stagger grid grid-cols-2 w-full border-2 justify-center transition-all duration-300 ${afkActive ? "border-primary" : "border-bg-light"}`}
         >
           {/* AFK Minutes Input */}
           <div className="grid grid-cols-2 col-1 w-full">
@@ -343,7 +388,7 @@ export default function Settings() {
         </div>
         <span
           style={{ "--delay": `100ms` } as React.CSSProperties}
-          className="animate-fade-up animate-stagger flex justify-center mt-1 text-sub-text"
+          className="animate-fade-up animate-stagger flex justify-center text-sub-text"
         >
           Total time of inactivity before AFK state
         </span>

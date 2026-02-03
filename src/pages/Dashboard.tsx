@@ -141,7 +141,7 @@ export default function Dashboard() {
 
   if (showInsights) {
     return (
-      <div className="w-full h-full flex justify-start mt-4 flex-col">
+      <div className="w-full h-full flex justify-start flex-col">
         <button
           className="text-text animate-fade-in flex w-full justify-center items-center cursor-pointer p-1 border-2 border-primary-dark hover:border-primary hover:bg-primary-dark transition-all duration-300"
           onClick={() => setShowInsights(false)}
@@ -154,7 +154,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="w-full h-full flex justify-start mt-4 flex-col">
+    <div className="w-full h-full flex justify-start flex-col">
       <div className="flex w-full h-fit flex-col">
         {/* Toggle Buttons */}
         <div className="flex w-full h-fit flex-row">
@@ -164,7 +164,7 @@ export default function Dashboard() {
               style={{ "--delay": `50ms` } as React.CSSProperties}
               className={`animate-fade-up animate-stagger col-1 p-1 flex justify-center cursor-pointer border-2 transition-all duration-300 ${
                 active === "global"
-                  ? "border-primary text-text"
+                  ? "border-primary bg-primary-dark text-text"
                   : "bg-transparent hover:bg-primary-dark text-sub-text border-transparent"
               }`}
             >
@@ -175,7 +175,7 @@ export default function Dashboard() {
               style={{ "--delay": `100ms` } as React.CSSProperties}
               className={`animate-fade-up animate-stagger col-2 p-1 flex justify-center cursor-pointer transition-all duration-300 border-2 ${
                 active === "block"
-                  ? "border-primary text-text"
+                  ? "border-primary bg-primary-dark text-text"
                   : "bg-transparent hover:bg-primary-dark text-sub-text border-transparent"
               }`}
             >

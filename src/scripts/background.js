@@ -538,12 +538,7 @@ async function checkDay() {
     // reset times for the new day
     await resetTodayTimeData();
 
-    // Timer reset on day rollover:
-    // If the countdown already finished (hit 0) or was never started, re-seed it
-    // from the original maxTime so today gets a fresh allowance.
-    // If it's still counting down (user was on a blocked site across midnight),
-    // leave it running. Once it hits 0 the action fires, and the NEXT day rollover
-    // (or the next active toggle) will seed a fresh copy.
+    // Timer reset on day rollover
     const { tmpMaxTime } = await chrome.storage.local.get("tmpMaxTime");
     const { active, maxTime } = await chrome.storage.sync.get(["active", "maxTime"]);
 
@@ -557,6 +552,73 @@ async function checkDay() {
     await calculateInsights();
   } catch (error) {
     console.error("[checkDay Error]:", error);
+  }
+}
+
+// Handles redirect action when landing on a blocked site
+async function handleRedirect(tabUrl) {
+  try {
+    const { action, redirect } = await chrome.storage.sync.get(["action", "redirect"]);
+
+    // Redirect if action is set to Redirect and a valid redirect URL exists
+    if (action !== "Redirect" || !redirect) {
+      return;
+    }
+
+    // Check if the current URL is a blocked site
+    const isBlocked = await checkBlock(tabUrl);
+    if (!isBlocked) {
+      return;
+    }
+
+    // Check if showAction is true (timer inactive or expired)
+    const { showAction } = await chrome.storage.local.get("showAction");
+    if (!showAction) {
+      return;
+    }
+
+    // perform redirect
+    const [activeTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    if (activeTab?.id) {
+      const target = redirect.startsWith("http") ? redirect : `https://${redirect}`;
+      chrome.tabs.update(activeTab.id, { url: target });
+      console.log(`[Redirect] Blocked site detected. Redirecting tab ${activeTab.id} to ${target}`);
+    }
+  } catch (error) {
+    console.error("[handleRedirect Error]:", error);
+  }
+}
+
+async function handleNuke(tabUrl) {
+  try {
+    const { action, nuke } = await chrome.storage.sync.get(["action", "nuke"]);
+
+    // Check if action is on block or nuke is active
+    if (action !== "Block" || !nuke) {
+      return;
+    }
+
+    // Check if the current URL is a blocked site
+    const isBlocked = await checkBlock(tabUrl);
+    if (!isBlocked) {
+      return;
+    }
+
+    // Check if showAction is true (timer inactive or expired)
+    const { showAction } = await chrome.storage.local.get("showAction");
+    if (!showAction) {
+      return;
+    }
+
+    // Delete current website
+    const [activeTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    if (activeTab?.id) {
+      // Ensure the redirect URL has a protocol
+      chrome.tabs.remove(activeTab.id);
+      console.log(`[Nuke] Nuke is enabled. Deleting tab ${activeTab.id}`);
+    }
+  } catch (error) {
+    console.error("[handleRedirect Error]:", error);
   }
 }
 
@@ -586,7 +648,7 @@ async function commitTime(now, start, url) {
 
       // ONLY UPDATE IF TIMER IS ACTIVE
       // TIMER ONLY CHANGES
-      const { active, action, redirect } = await chrome.storage.sync.get(["active", "action", "redirect"]);
+      const { active } = await chrome.storage.sync.get(["active"]);
       let { tmpMaxTime } = await chrome.storage.local.get(["tmpMaxTime"]);
 
       // Saftey check if tmpMaxTime is missing
@@ -600,26 +662,15 @@ async function commitTime(now, start, url) {
       if (active) {
         const newMaxTime = Math.max(0, tmpMaxTime - delta);
         await chrome.storage.local.set({ tmpMaxTime: newMaxTime, showAction: newMaxTime <= 0 });
-
-        // Redirect fires once: only on the tick that actually crosses zero,
-        // not on every subsequent tick while maxTime stays at 0.
-        if (newMaxTime <= 0 && tmpMaxTime > 0 && action === "Redirect" && redirect) {
-          const [activeTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-          if (activeTab?.id) {
-            // Ensure the redirect URL has a protocol so chrome doesn't treat it as a search
-            const target = redirect.startsWith("http") ? redirect : `https://${redirect}`;
-            chrome.tabs.update(activeTab.id, { url: target });
-            console.log(`[Redirect] Timer expired. Redirecting tab ${activeTab.id} to ${target}`);
-          }
-        }
-
         console.log("[Timer Active] Remaining Time:", newMaxTime);
+        if (shouldShowAction) {
+          await handleRedirect(url);
+          await handleNuke(url);
+        }
       } else {
         console.log(`[Timer Disable] adding: ${delta} to ${domain}`);
       }
-
       updateData.totalWebsiteTime = totalWebsiteTime;
-
       console.log("block sites:", totalWebsiteTime);
     }
 
@@ -646,13 +697,6 @@ async function syncSession(tabUrl, reason) {
       "tmpMaxTime",
     ]);
 
-    // // make a check to see if scripts exist before blocking
-    // const scripts = await chrome.scripting.getRegisteredContentScripts();
-    // if (!scripts.some((s) => s.id === "blockedSites")) {
-    //   console.log("Scripts missing. re-registering");
-    //   await updateContentScript();
-    // }
-
     // If the extension is OFF, stop everything immediately.
     if (globalSwitch === false || globalSwitch === undefined || active === undefined) {
       console.log("[Guard] Extension is Disabled. Allowing all traffic.");
@@ -673,6 +717,9 @@ async function syncSession(tabUrl, reason) {
         currentSite: tabUrl,
         showAction: !(active && tmpMaxTime > 0),
       });
+
+      await handleRedirect(tabUrl);
+      await handleNuke(tabUrl);
     }
   } catch (error) {
     console.error("[syncSession Error]:", error);

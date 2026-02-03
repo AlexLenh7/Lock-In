@@ -51,9 +51,9 @@ input::-webkit-inner-spin-button {
   --brand-sub-text: oklch(69.581% 0.06667 271.388);
   --brand-primary: oklch(64.479% 0.18972 262.213);
   --brand-primary-dark: oklch(39.591% 0.14558 261.383);
-  --brand-bg: oklch(15.907% 0.00002 271.152);
-  --brand-bg-dark: oklch(22% 0.00003 271.152);
-  --brand-bg-light: oklch(42.024% 0.00005 271.152);
+  --brand-bg: oklch(17.764% 0.00002 271.152);
+  --brand-bg-dark: oklch(25.066% 0.01612 252.481);
+  --brand-bg-light: oklch(32.546% 0.02674 262.597);
   --brand-secondary: oklch(79.519% 0.16532 69.523);
 }
 
@@ -97,7 +97,7 @@ input::-webkit-inner-spin-button {
   --brand-primary-dark: oklch(39.676% 0.16194 293.85);
   --brand-bg: oklch(12.306% 0.03147 275.876);
   --brand-bg-dark: oklch(21.071% 0.02984 255.344);
-  --brand-bg-light: oklch(27.887% 0.05808 261.509);
+  --brand-bg-light: oklch(30.677% 0.08122 285.931);
   --brand-secondary: oklch(67.611% 0.22901 348.976);
 }
 
@@ -222,7 +222,7 @@ input::-webkit-inner-spin-button {
       opacity: 1;
     }
   }
-  --animate-fade-in: fade-in 0.6s ease-out both;
+  --animate-fade-in: fade-in 0.8s ease-out both;
 }
 
 @theme {
