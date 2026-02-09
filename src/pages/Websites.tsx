@@ -67,10 +67,18 @@ export default function Websites({ website, setWebsite }: Props) {
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
-      <div className="w-full flex justify-center text-sub-text mb-1">View, add, and delete your websites</div>
+      <div
+        style={{ "--delay": `50ms` } as React.CSSProperties}
+        className="animate-fade-up animate-stagger w-full flex justify-center text-sub-text mb-1"
+      >
+        View, add, and delete your websites
+      </div>
       {/* Input field */}
       <div className="border-bg-light border-2 animate-fade-in flex flex-col h-fit overflow-hidden">
-        <div className="w-full flex flex-row gap-2 shrink-0">
+        <div
+          style={{ "--delay": `50ms` } as React.CSSProperties}
+          className="animate-fade-up animate-stagger w-full flex flex-row gap-2 shrink-0"
+        >
           <div className="w-full text-text border-b-2 border-bg-light transition-all duration-200">
             <input
               type="text"

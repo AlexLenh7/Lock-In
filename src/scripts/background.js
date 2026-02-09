@@ -259,21 +259,6 @@ async function handleAfkTime() {
   }
 }
 
-// handles user return from idle state
-async function verifyUserReturn() {
-  const { idleStart, afkReached } = await chrome.storage.local.get(["idleStart", "afkReached"]);
-
-  if (idleStart || afkReached) {
-    // Mark that we need to verify if user is truly back
-    await chrome.storage.local.set({
-      pendingReturn: true,
-      returnCheckTime: Date.now(),
-    });
-
-    console.log("[Idle State] User returned, waiting 30s to verify...");
-  }
-}
-
 // listens for changes in idle state
 chrome.idle.onStateChanged.addListener(async (newState) => {
   const { afkActive } = await chrome.storage.sync.get("afkActive");
@@ -301,13 +286,14 @@ chrome.idle.onStateChanged.addListener(async (newState) => {
     }
 
     // If user was fully AFK and goes idle again, start fresh
-    if (afkReached) {
+    // if currentSite then user is still afk
+    if (afkReached && currentSite) {
       // Create AFK alarm
-      await chrome.storage.local.remove(["afkReached", "tmpAfkTime"]);
+      await chrome.storage.local.remove(["afkReached"]);
       await chrome.storage.local.set({ idleStart: Date.now() });
       chrome.alarms.create("AFKalarm", { periodInMinutes: 0.5 });
 
-      console.log("[Idle State] User was AFK, now idle again - resetting and starting fresh");
+      console.log("[Idle State] User was AFK now idle again");
     } else if (!idleStart) {
       // Create AFK alarm to track idle time
       await chrome.storage.local.set({ idleStart: Date.now(), afkReached: false });
@@ -317,7 +303,7 @@ chrome.idle.onStateChanged.addListener(async (newState) => {
     } else {
       console.log("[Idle State] Already tracking idle time, ignoring state change");
 
-      // FIX: If we were verifying a return, but the user went back to idle, cancel the check!
+      // If we were verifying a return, but the user went back to idle, cancel the check!
       const { pendingReturn } = await chrome.storage.local.get("pendingReturn");
       if (pendingReturn) {
         console.log("[Idle State] User went back to idle during verification. Resuming.");
@@ -325,28 +311,13 @@ chrome.idle.onStateChanged.addListener(async (newState) => {
       }
     }
   }
-  // User returns to active state
+  // User returns to active state verify it manually
   else if (newState === "active") {
     console.log("[Idle State] User returned to active");
-    const { afkReached } = await chrome.storage.local.get("afkReached");
-
-    // If user was fully AFK and returns, reset everything immediately
-    if (afkReached) {
-      console.log("[Idle State] User returned from full AFK, resetting all flags");
-      await chrome.storage.local.remove(["afkReached", "tmpAfkTime", "idleStart"]);
-      chrome.alarms.clear("AFKalarm");
-      console.log("[AFK Alarm] Cleared");
-
-      // Resume session for current tab
-      const [currTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-      if (currTab?.url) {
-        await syncSession(currTab.url, "Return from full AFK");
-      }
-    } else {
-      // Normal return verify for 30 seconds
-      console.log("[Idle State] Keeping AFK alarm active for 30s verification");
-      await verifyUserReturn();
-    }
+    await chrome.storage.local.set({
+      pendingReturn: true,
+      returnCheckTime: Date.now(),
+    });
   }
 });
 
@@ -373,7 +344,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         await chrome.storage.local.set({ startTime: now });
       }
     } else if (alarm.name === "AFKalarm") {
-      const { currentSite, startTime, idleStart, afkReached, pendingReturn, returnCheckTime, tmpAfkTime } =
+      const { currentSite, startTime, idleStart, afkReached, pendingReturn, returnCheckTime } =
         await chrome.storage.local.get([
           "currentSite",
           "startTime",
@@ -381,32 +352,27 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
           "afkReached",
           "pendingReturn",
           "returnCheckTime",
-          "tmpAfkTime",
         ]);
 
       if (pendingReturn === true && returnCheckTime) {
-        const timeSinceReturn = Math.round((Date.now() - returnCheckTime) / 1000);
+        const rawTime = (Date.now() - returnCheckTime) / 1000;
+        //const activeDuration = Math.min(30, Math.floor(rawTime));
+        const activeDuration = Math.round(rawTime);
+        if (activeDuration <= 2) activeDuration = 0;
+        else if (activeDuration >= 28) activeDuration = 30;
+        // const isUserBack = Math.abs(activeDuration - 30) > 1 && activeDuration !== 0;
+        const isUserBack = activeDuration !== 0 && activeDuration !== 30;
 
-        const isUserBack = timeSinceReturn < 30;
+        console.log("isUserBack:", isUserBack, "[rawTime]:", rawTime, "[activeDuration]:", activeDuration);
 
-        console.log("timeSinceReturn", timeSinceReturn, "[idleStart]:", idleStart);
-        console.log("isUserBack:", isUserBack);
-
-        // If 30+ seconds passed and user is still active (no new idleStart)
+        // If we detect 1+ seconds of movement elapsed from timer we reset
         if (isUserBack) {
           console.log("[Idle State] User confirmed back, resuming normal tracking");
           // Reset all idle/AFK related flags
-          await chrome.storage.local.remove([
-            "pendingReturn",
-            "returnCheckTime",
-            "idleStart",
-            "afkReached",
-            "tmpAfkTime",
-          ]);
+          await chrome.storage.local.remove(["pendingReturn", "returnCheckTime", "idleStart", "afkReached"]);
 
           // Clear the AFK alarm since user is confirmed back
           chrome.alarms.clear("AFKalarm");
-          console.log("[AFK Alarm] Cleared after confirmed return");
 
           // Resume session for current tab
           if (currTab.url) {
@@ -416,16 +382,14 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         }
         // If they went back to idle, keep waiting
         else if (idleStart) {
-          console.log("[Idle State] User went back to idle, continuing to track");
+          console.log("[Idle State] User went back to idle/afk, continuing to track");
           await chrome.storage.local.remove(["pendingReturn", "returnCheckTime"]);
-          // Don't return - continue to AFK tracking below
         } else {
-          // Still waiting for 30 seconds to pass
           return;
         }
       }
 
-      // If already reached true AFK, stop all tracking
+      // user is fully afk skip tracking
       if (afkReached) {
         console.log("[AFK] Already reached threshold, skipping tracking");
         return;
@@ -433,36 +397,27 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
       // Check if user has reached true AFK time
       if (idleStart && !afkReached) {
-        const elapsed = Math.round((Date.now() - idleStart) / 1000);
+        const totalIdleTime = Math.round((Date.now() - idleStart) / 1000);
         const { afkTime, afkActive } = await chrome.storage.sync.get(["afkTime", "afkActive"]);
 
         // User has reached true AFK threshold
-        if (elapsed >= afkTime && afkActive) {
+        if (totalIdleTime >= afkTime && afkActive) {
           console.log(`[AFK] User reached AFK threshold (${afkTime}s), stopping tracking`);
           await handleAfkTime();
           await chrome.storage.local.set({ afkReached: true });
-
-          // Clear the AFK alarm since we've reached the threshold
-          chrome.alarms.clear("AFKalarm");
-          console.log("[AFK Alarm] Cleared after reaching threshold");
           return;
         }
+        console.log(`[AFK] Idle for ${totalIdleTime}s / ${afkTime}s, continuing to track`);
 
-        // User is idle but hasn't reached AFK threshold yet
-        // Account for 30 second intervals between idle checks
-        const newTmpAfkTime = Math.max(0, elapsed - afkTime);
-        await chrome.storage.local.set({ tmpAfkTime: newTmpAfkTime });
-
-        console.log(`[AFK] Idle for ${elapsed}s / ${afkTime}s (tmpAfkTime: ${newTmpAfkTime}s), continuing to track`);
-
-        // Continue committing time every 30 seconds even while idle
-        // Only stop when we reach the full AFK threshold
+        // Continue committing time every 30 seconds while idle
         if (currTab.url === currentSite && startTime) {
           const now = Date.now();
           await commitTime(now, startTime, currentSite);
           await chrome.storage.local.set({ startTime: now });
         }
       }
+    } else if (alarm.name === "UpdateInsights") {
+      await calculateInsights();
     }
   } catch (error) {
     console.error("[Alarm Error]:", error);
@@ -475,8 +430,10 @@ async function startUpEvent() {
     console.log("[Starting Up Extension]");
     await updateContentScript();
     await resetAfkChecks();
+    await calculateInsights();
     chrome.idle.setDetectionInterval(30);
     chrome.alarms.create("alarm", { periodInMinutes: 0.5 });
+    chrome.alarms.create("UpdateInsights", { periodInMinutes: 5 });
   } catch (error) {
     console.error("[StartUp Error]:", error);
   }
@@ -495,8 +452,21 @@ chrome.runtime.onStartup.addListener(async () => {
 // helper function checks for day to store times
 async function checkDay() {
   try {
-    const { currentDay } = await chrome.storage.local.get("currentDay");
     const today = new Date().getDay();
+
+    const [localData, syncData] = await Promise.all([
+      chrome.storage.local.get([
+        "currentDay",
+        "globalWebsiteTime",
+        "totalWebsiteTime",
+        "storeGlobalDay",
+        "storeBlockDay",
+        "tmpMaxTime",
+      ]),
+      chrome.storage.sync.get(["active", "maxTime"]),
+    ]);
+    const { currentDay, globalWebsiteTime, totalWebsiteTime, storeGlobalDay, storeBlockDay, tmpMaxTime } = localData;
+    const { active, maxTime } = syncData;
 
     if (currentDay === undefined) {
       console.log("[Setup] First run detected. Initializing currentDay.");
@@ -505,7 +475,7 @@ async function checkDay() {
       return;
     }
 
-    // Check for same day before running
+    // Same day skip
     if (today === currentDay) {
       console.log("[CheckDay] Day is not over, skipping...");
       return;
@@ -514,16 +484,19 @@ async function checkDay() {
     const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const yesterdayName = days[currentDay]; // Use stored currentDay as the previous day
 
-    const {
-      storeBlockDay = {},
-      storeGlobalDay = {},
-      globalWebsiteTime = {},
-      totalWebsiteTime = {},
-    } = await chrome.storage.local.get(["globalWebsiteTime", "totalWebsiteTime", "storeGlobalDay", "storeBlockDay"]);
+    // const {
+    //   storeBlockDay = {},
+    //   storeGlobalDay = {},
+    //   globalWebsiteTime = {},
+    //   totalWebsiteTime = {},
+    // } = await chrome.storage.local.get(["globalWebsiteTime", "totalWebsiteTime", "storeGlobalDay", "storeBlockDay"]);
+
+    const updatedStoreBlock = storeBlockDay || {};
+    const updatedStoreGlobal = storeGlobalDay || {};
 
     // Save the PREVIOUS day's accumulated data
-    storeBlockDay[yesterdayName] = totalWebsiteTime;
-    storeGlobalDay[yesterdayName] = globalWebsiteTime;
+    updatedStoreBlock[yesterdayName] = totalWebsiteTime || {};
+    updatedStoreGlobal[yesterdayName] = globalWebsiteTime || {};
 
     console.log(`[CheckDay] Saved data for ${yesterdayName}:`, {
       blocked: totalWebsiteTime,
@@ -534,100 +507,73 @@ async function checkDay() {
     let counter = (currentDay + 1) % 7;
     while (counter !== today) {
       const gapDayName = days[counter];
-      storeBlockDay[gapDayName] = null;
-      storeGlobalDay[gapDayName] = null;
+      updatedStoreBlock[gapDayName] = null;
+      updatedStoreGlobal[gapDayName] = null;
       counter = (counter + 1) % 7;
     }
 
     // store the all times into that day and update date
     // currentDay is stored as a number
-    await chrome.storage.local.set({ storeBlockDay, storeGlobalDay, currentDay: today });
+    const updates = {
+      storeBlockDay: updatedStoreBlock,
+      storeGlobalDay: updatedStoreGlobal,
+      currentDay: today,
+      totalWebsiteTime: {}, // Resets today's blocked time
+      globalWebsiteTime: {}, // Resets today's global time
+    };
+
+    //await chrome.storage.local.set({ storeBlockDay, storeGlobalDay, currentDay: today });
     console.log("CurrDay Blocked Times:", storeBlockDay);
     console.log("CurrDay Global Times:", storeGlobalDay);
+
     // reset times for the new day
     await resetTodayTimeData();
 
     // Timer reset on day rollover
-    const { tmpMaxTime } = await chrome.storage.local.get("tmpMaxTime");
-    const { active, maxTime } = await chrome.storage.sync.get(["active", "maxTime"]);
+    // const { tmpMaxTime } = await chrome.storage.local.get("tmpMaxTime");
+    // const { active, maxTime } = await chrome.storage.sync.get(["active", "maxTime"]);
 
-    if (active && (tmpMaxTime === undefined || tmpMaxTime === null || tmpMaxTime <= 0)) {
-      await chrome.storage.local.set({ tmpMaxTime: maxTime, showAction: false });
-      console.log("[CheckDay] Timer expired or unused yesterday. Seeded fresh tmpMaxTime:", maxTime);
-    } else if (active && tmpMaxTime > 0) {
-      console.log("[CheckDay] Timer still counting down across midnight. Leaving tmpMaxTime at:", tmpMaxTime);
+    if (active && (tmpMaxTime === undefined || tmpMaxTime <= 0)) {
+      updates.tmpMaxTime = maxTime; // Added to updates object
+      updates.showAction = false; // Added to updates object
     }
 
+    await chrome.storage.local.set(updates);
+    console.log(`[CheckDay] Rollover to ${days[today]} complete.`);
     await calculateInsights();
   } catch (error) {
     console.error("[checkDay Error]:", error);
   }
 }
 
-// Handles redirect action when landing on a blocked site
 async function handleRedirect(tabUrl) {
-  try {
-    const { action, redirect } = await chrome.storage.sync.get(["action", "redirect"]);
+  const { action, redirect } = await chrome.storage.sync.get(["action", "redirect"]);
+  if (action !== "Redirect" || !redirect) return;
 
-    // Redirect if action is set to Redirect and a valid redirect URL exists
-    if (action !== "Redirect" || !redirect) {
-      return;
-    }
-
-    // Check if the current URL is a blocked site
-    const isBlocked = await checkBlock(tabUrl);
-    if (!isBlocked) {
-      return;
-    }
-
-    // Check if showAction is true (timer inactive or expired)
+  if (await checkBlock(tabUrl)) {
     const { showAction } = await chrome.storage.local.get("showAction");
-    if (!showAction) {
-      return;
+    if (showAction) {
+      const [activeTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+      if (activeTab?.id) {
+        const target = redirect.startsWith("http") ? redirect : `https://${redirect}`;
+        chrome.tabs.update(activeTab.id, { url: target });
+      }
     }
-
-    // perform redirect
-    const [activeTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-    if (activeTab?.id) {
-      const target = redirect.startsWith("http") ? redirect : `https://${redirect}`;
-      chrome.tabs.update(activeTab.id, { url: target });
-      console.log(`[Redirect] Blocked site detected. Redirecting tab ${activeTab.id} to ${target}`);
-    }
-  } catch (error) {
-    console.error("[handleRedirect Error]:", error);
   }
 }
 
 async function handleNuke(tabUrl) {
-  try {
-    const { action, nuke } = await chrome.storage.sync.get(["action", "nuke"]);
+  const { action, nuke } = await chrome.storage.sync.get(["action", "nuke"]);
+  if (action !== "Block" || !nuke) return;
 
-    // Check if action is on block or nuke is active
-    if (action !== "Block" || !nuke) {
-      return;
-    }
-
-    // Check if the current URL is a blocked site
-    const isBlocked = await checkBlock(tabUrl);
-    if (!isBlocked) {
-      return;
-    }
-
-    // Check if showAction is true (timer inactive or expired)
+  if (await checkBlock(tabUrl)) {
     const { showAction } = await chrome.storage.local.get("showAction");
-    if (!showAction) {
-      return;
+    if (showAction) {
+      const [activeTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+      if (activeTab?.id) {
+        chrome.tabs.remove(activeTab.id);
+      }
     }
-
-    // Delete current website
-    const [activeTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-    if (activeTab?.id) {
-      // Ensure the redirect URL has a protocol
-      chrome.tabs.remove(activeTab.id);
-      console.log(`[Nuke] Nuke is enabled. Deleting tab ${activeTab.id}`);
-    }
-  } catch (error) {
-    console.error("[handleRedirect Error]:", error);
   }
 }
 
@@ -635,63 +581,75 @@ async function commitTime(now, start, url) {
   try {
     const delta = (now - start) / 1000;
     if (delta <= 0 || isNaN(delta)) return;
-
-    const { startTime: currentStoredStartTime } = await chrome.storage.local.get("startTime");
-    if (currentStoredStartTime !== start) {
-      console.log("[commitTime] Aborting: Race condition detected. Time already committed by another process.");
-      return;
-    }
-
-    const currDay = new Date().getDay();
-    await chrome.storage.local.set({ currentDay: currDay });
-
     const domain = new URL(url).hostname.replace(/^www\./, "");
 
-    const { globalWebsiteTime = {}, totalWebsiteTime = {} } = await chrome.storage.local.get([
-      "globalWebsiteTime",
-      "totalWebsiteTime",
+    const [localData, syncData] = await Promise.all([
+      chrome.storage.local.get([
+        "startTime",
+        "currentDay",
+        "globalWebsiteTime",
+        "totalWebsiteTime",
+        "tmpMaxTime",
+        "showAction",
+      ]),
+      chrome.storage.sync.get(["active", "maxTime"]),
     ]);
+
+    const updateData = {};
+
+    // Check and update day
+    const currDay = new Date().getDay();
+    if (localData.currentDay !== currDay) {
+      updateData.currentDay = currDay;
+    }
+
+    // Update Global time
+    const globalWebsiteTime = localData.globalWebsiteTime || {};
     globalWebsiteTime[domain] = (globalWebsiteTime[domain] || 0) + delta;
+    updateData.globalWebsiteTime = globalWebsiteTime;
 
     const isBlocked = await checkBlock(url);
-    let updateData = { globalWebsiteTime };
 
     // always track blocked sites even if timer isn't active
     if (isBlocked) {
       // ALWAYS UPDATE TIME ON BLOCKED SITES
+      const totalWebsiteTime = localData.totalWebsiteTime || {};
       totalWebsiteTime[domain] = (totalWebsiteTime[domain] || 0) + delta;
+      updateData.totalWebsiteTime = totalWebsiteTime;
 
       // ONLY UPDATE IF TIMER IS ACTIVE
       // TIMER ONLY CHANGES
-      const { active } = await chrome.storage.sync.get(["active"]);
-      let { tmpMaxTime } = await chrome.storage.local.get(["tmpMaxTime"]);
+      const active = syncData.active;
+      let tmpMaxTime = localData.tmpMaxTime;
 
       // Saftey check if tmpMaxTime is missing
       if (active && (tmpMaxTime === undefined || tmpMaxTime === null)) {
-        const { maxTime } = await chrome.storage.sync.get("maxTime");
-        tmpMaxTime = maxTime;
-        await chrome.storage.local.set({ tmpMaxTime });
-        console.log("[Timer] tmpMaxTime was missing. Emergency seed from maxTime:", tmpMaxTime);
+        tmpMaxTime = syncData.maxTime;
+        console.log("[Timer] tmpMaxTime missing. Seeding:", tmpMaxTime);
       }
 
       if (active) {
         const newMaxTime = Math.max(0, tmpMaxTime - delta);
         const shouldShowAction = newMaxTime <= 0;
-        await chrome.storage.local.set({ tmpMaxTime: newMaxTime, showAction: shouldShowAction });
+        updateData.tmpMaxTime = newMaxTime;
+
+        // Only update showAction if it changed
+        if (localData.showAction !== shouldShowAction) {
+          updateData.showAction = shouldShowAction;
+        }
+
         console.log("[Timer Active] Remaining Time:", newMaxTime);
         if (shouldShowAction) {
-          await handleRedirect(url);
-          await handleNuke(url);
+          await Promise.all([handleRedirect(url), handleNuke(url)]).catch(console.error);
         }
       } else {
         console.log(`[Timer Disable] adding: ${delta} to ${domain}`);
       }
-      updateData.totalWebsiteTime = totalWebsiteTime;
       console.log("block sites:", totalWebsiteTime);
     }
 
     await chrome.storage.local.set(updateData);
-    await calculateInsights();
+    //await calculateInsights();
     console.log(`[Timer] Committed ${delta}s to ${domain}. Blocked: ${isBlocked}`);
     console.log("global sites:", globalWebsiteTime);
   } catch (error) {
@@ -699,26 +657,12 @@ async function commitTime(now, start, url) {
   }
 }
 
-// debounce to prevent rapid syncSession calls
-let syncSessionPending = false;
 let syncSessionTimeout = null;
-
 async function debouncedSyncSession(tabUrl, reason) {
-  // Clear any pending timeout
-  if (syncSessionTimeout) {
-    clearTimeout(syncSessionTimeout);
-  }
+  if (syncSessionTimeout) clearTimeout(syncSessionTimeout);
 
-  // Set a short debounce (100ms) to batch rapid calls
-  syncSessionTimeout = setTimeout(async () => {
-    if (!syncSessionPending) {
-      syncSessionPending = true;
-      try {
-        await syncSession(tabUrl, reason);
-      } finally {
-        syncSessionPending = false;
-      }
-    }
+  syncSessionTimeout = setTimeout(() => {
+    syncSession(tabUrl, reason).catch(console.error);
   }, 100);
 }
 
@@ -726,15 +670,14 @@ async function syncSession(tabUrl, reason) {
   try {
     console.log(`[Event] Triggered by: ${reason}`);
     const now = Date.now();
-    //const today = new Date().getDay();
 
     // grab user settings
-    const { globalSwitch, active } = await chrome.storage.sync.get(["globalSwitch", "active"]);
-    const { currentSite, startTime, tmpMaxTime } = await chrome.storage.local.get([
-      "currentSite",
-      "startTime",
-      "tmpMaxTime",
+    const [syncSettings, localData] = await Promise.all([
+      chrome.storage.sync.get(["globalSwitch", "active"]),
+      chrome.storage.local.get(["currentSite", "startTime", "tmpMaxTime"]),
     ]);
+    const { globalSwitch, active } = syncSettings;
+    const { currentSite, startTime, tmpMaxTime } = localData;
 
     // If the extension is OFF, stop everything immediately.
     if (globalSwitch === false || globalSwitch === undefined || active === undefined) {
@@ -757,8 +700,7 @@ async function syncSession(tabUrl, reason) {
         showAction: !(active && tmpMaxTime > 0),
       });
 
-      await handleRedirect(tabUrl);
-      await handleNuke(tabUrl);
+      await Promise.all([handleRedirect(tabUrl), handleNuke(tabUrl)]).catch(console.error);
     }
   } catch (error) {
     console.error("[syncSession Error]:", error);
@@ -820,8 +762,7 @@ async function returnIdleAfk() {
 
     if (pendingReturn || idleStart || afkReached) {
       console.log("[URL Change] User returned from idle/AFK state");
-      await chrome.storage.local.set({ pendingReturn: false });
-      await chrome.storage.local.remove(["idleStart", "afkReached", "returnCheckTime"]);
+      await chrome.storage.local.remove(["idleStart", "pendingReturn", "afkReached", "returnCheckTime"]);
     }
   } catch (error) {
     console.error("[returnIdleAfk Error]:", error);
@@ -955,7 +896,7 @@ async function resetWeeklyData() {
 }
 
 async function resetAfkChecks() {
-  await chrome.storage.local.remove(["pendingReturn", "returnCheckTime", "idleStart", "afkReached", "tmpAfkTime"]);
+  await chrome.storage.local.remove(["pendingReturn", "returnCheckTime", "idleStart", "afkReached"]);
   console.log("[Cleanup] full reset.");
 }
 

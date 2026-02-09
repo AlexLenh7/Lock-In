@@ -37,6 +37,7 @@ export default function Dashboard() {
   const [active, setActive] = useState<string>("global");
   const [showInsights, setShowInsights] = useState<boolean>(false);
   const [scoreStreak, setScoreStreak] = useState<InsightsData | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const Days = [
     { id: 1, short: "Sun", name: "Sunday" },
@@ -61,6 +62,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     const loadData = async () => {
+      setIsLoading(true);
       try {
         const data = (await chrome.storage.local.get([
           "globalWebsiteTime",
@@ -113,6 +115,7 @@ export default function Dashboard() {
       } catch (error) {
         console.log(error);
       }
+      setIsLoading(false);
     };
 
     loadData();
@@ -259,7 +262,7 @@ export default function Dashboard() {
                   <span className="text-text">{formatTotalTime(site.seconds)}</span>
                 </li>
               ))}
-              {(active === "block" ? websiteTimes : globalTimes).length === 0 && (
+              {!isLoading && (active === "block" ? websiteTimes : globalTimes).length === 0 && (
                 <li className="text-text p-1 text-xs w-full justify-center flex items-center">
                   Data unavalibale for {currDay}.
                 </li>
@@ -312,7 +315,7 @@ export default function Dashboard() {
           className="animate-fade-up animate-stagger text-text tracking-wide flex w-full justify-center items-center cursor-pointer mt-2 p-1 transition-all duration-300 hover:bg-primary-dark border-2 border-primary-dark hover:border-primary"
           onClick={() => setShowInsights(true)}
         >
-          Learn more about your habits <PiMagnifyingGlassBold className="text-secondary size-4 ml-1" />
+          <PiMagnifyingGlassBold className="text-secondary size-4 mr-1" /> Learn more about your habits
         </button>
       </div>
     </div>

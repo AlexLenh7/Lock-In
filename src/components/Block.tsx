@@ -26,15 +26,17 @@ export default function Block({ onClose }: BlockProp) {
   };
 
   return (
-    <div className="w-full h-full inset-0 flex justify-center items-start">
-      <div className="bg-(--brand-bg) rounded-lg p-4 mt-4 w-30vw max-w-125 h-auto flex justify-center flex-col border-(--brand-text) border-solid border-2 relative">
+    <div className="w-full h-full inset-0">
+      <div className="bg-(--brand-bg) rounded-lg p-4 w-125 max-w-[90vw] flex justify-center items-center flex-col border-(--brand-text) border-solid border-2 relative">
+        {/* Ping effect */}
         <span className="absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2 flex size-4">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-(--brand-text) opacity-75"></span>
           <span className="relative inline-flex size-4 rounded-full bg-(--brand-text)"></span>
         </span>
+        {/* Content box */}
         <div className="p-8 flex justify-center flex-col">
           <div className="flex flex-row mb-4 justify-center">
-            <span className="text-4xl font-Lexend font-bold text-(--brand-text) justify-center items-center flex">
+            <span className="text-4xl font-bold text-(--brand-text) justify-center items-center flex">
               🔒 Lock Back In
             </span>
           </div>
