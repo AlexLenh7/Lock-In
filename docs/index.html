@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lock In - Distraction Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                text: "oklch(96.115% 0.1 271.152)",
+                sub: "oklch(69.581% 0.06667 271.388)",
+                primary: "oklch(64.479% 0.18972 262.213)",
+                primaryDark: "oklch(39.591% 0.14558 261.383)",
+                bg: "oklch(17.764% 0.00002 271.152)",
+                bgDark: "oklch(25.066% 0.01612 252.481)",
+                bgLight: "oklch(32.546% 0.02674 262.597)",
+                secondary: "oklch(79.519% 0.16532 69.523)",
+              },
+            },
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+            },
+            animation: {
+              "fade-in": "fadeIn 0.5s ease-out",
+            },
+            keyframes: {
+              fadeIn: {
+                "0%": { opacity: "0", transform: "translateY(10px)" },
+                "100%": { opacity: "1", transform: "translateY(0)" },
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: oklch(17.764% 0.00002 271.152);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: oklch(32.546% 0.02674 262.597);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: oklch(64.479% 0.18972 262.213);
+      }
+    </style>
+  </head>
+  <body class="bg-brand-bgDark text-brand-text leading-relaxed selection:bg-brand-primary selection:text-white">
+    <nav class="fixed w-full z-50 bg-black/10 backdrop-blur-md border-b border-brand-bgLight">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 flex items-center justify-center">
+              <img src="../src/assets/Lock-In-Icon-Toolbar.png" />
+            </div>
+            <span class="font-bold text-xl tracking-wide uppercase">Lock In</span>
+          </div>
+          <div class="hidden md:block">
+            <div class="ml-10 flex items-baseline space-x-8">
+              <a
+                href="#quickstart"
+                class="hover:text-brand-primary transition-colors px-3 py-2 rounded-md text-sm font-medium"
+                >Quick Start</a
+              >
+              <a
+                href="#help"
+                class="hover:text-brand-primary transition-colors px-3 py-2 rounded-md text-sm font-medium"
+                >Help Guide</a
+              >
+              <a href="#faq" class="hover:text-brand-primary transition-colors px-3 py-2 rounded-md text-sm font-medium"
+                >FAQ</a
+              >
+              <a
+                href="https://github.com/AlexLenh7/Lock-In-Distraction-Blocker"
+                target="_blank"
+                class="bg-brand-bgLight hover:bg-brand-primaryDark border border-brand-primary text-brand-text px-4 py-2 rounded-md text-sm font-bold transition-all"
+              >
+                GitHub
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <header class="pt-32 pb-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto text-center animate-fade-in">
+      <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight mb-6">
+        Reclaim Your
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-secondary"
+          >Lock In</span
+        >
+      </h1>
+      <p class="mt-4 text-xl text-brand-sub max-w-2xl mx-auto mb-10">
+        Monitor your productivity, set daily limits on distractions, and build better browsing habits with Lock In.
+      </p>
+
+      <div class="flex justify-center gap-4 mb-16">
+        <a
+          href="#"
+          class="bg-brand-primary hover:bg-brand-primaryDark text-white font-bold py-3 px-8 rounded-lg transition-all shadow-lg shadow-brand-primary/25"
+        >
+          Add to Chrome
+        </a>
+        <a
+          href="#quickstart"
+          class="bg-brand-bgLight hover:bg-brand-bgDark border border-brand-bgLight text-brand-text font-semibold py-3 px-8 rounded-lg transition-all"
+        >
+          Learn More
+        </a>
+      </div>
+
+      <div class="relative max-w-4xl mx-auto group" onmouseenter="pauseCarousel()" onmouseleave="resumeCarousel()">
+        <div
+          class="rounded-xl overflow-hidden border-2 border-brand-bgLight shadow-2xl shadow-brand-primaryDark/20 bg-brand-bgDark aspect-[16/10]"
+        >
+          <div id="carousel-track" class="flex transition-transform duration-700 ease-in-out h-full w-full">
+            <div class="min-w-full h-full relative">
+              <img
+                src="../src/assets/LockInThumbnail1.jpg"
+                alt="Dashboard View"
+                class="object-cover w-full h-full"
+                onerror="this.src = 'https://placehold.co/1280x800/25252d/a78bfa?text=Dashboard+View&font=montserrat'"
+              />
+            </div>
+
+            <div class="min-w-full h-full relative">
+              <img
+                src="../src/assets/LockInThumbnail2.jpg"
+                alt="Settings View"
+                class="object-cover w-full h-full"
+                onerror="this.src = 'https://placehold.co/1280x800/25252d/60a5fa?text=Settings+View&font=montserrat'"
+              />
+            </div>
+
+            <div class="min-w-full h-full relative">
+              <img
+                src="../src/assets/LockInThumbnail3.jpg"
+                alt="Insights View"
+                class="object-cover w-full h-full"
+                onerror="this.src = 'https://placehold.co/1280x800/25252d/f472b6?text=Insights+View&font=montserrat'"
+              />
+            </div>
+
+            <div class="min-w-full h-full relative">
+              <img
+                src="../src/assets/LockInThumbnail4.jpg"
+                alt="Block Screen"
+                class="object-cover w-full h-full"
+                onerror="this.src = 'https://placehold.co/1280x800/25252d/34d399?text=Block+Screen&font=montserrat'"
+              />
+            </div>
+
+            <div class="min-w-full h-full relative">
+              <img
+                src="../src/assets/LockInThumbnail5.jpg"
+                alt="Website List"
+                class="object-cover w-full h-full"
+                onerror="this.src = 'https://placehold.co/1280x800/25252d/fbbf24?text=Website+List&font=montserrat'"
+              />
+            </div>
+
+            <div class="min-w-full h-full relative">
+              <img
+                src="../src/assets/LockInThumbnail6.jpg"
+                alt="Theme Options"
+                class="object-cover w-full h-full"
+                onerror="this.src = 'https://placehold.co/1280x800/25252d/a78bfa?text=Theme+Options&font=montserrat'"
+              />
+            </div>
+          </div>
+        </div>
+
+        <button
+          onclick="moveSlide(-1)"
+          class="absolute left-4 top-1/2 -translate-y-1/2 bg-brand-bg/80 hover:bg-brand-primary text-brand-text p-2 rounded-full backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 focus:opacity-100 shadow-lg border border-brand-bgLight"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+        </button>
+
+        <button
+          onclick="moveSlide(1)"
+          class="absolute right-4 top-1/2 -translate-y-1/2 bg-brand-bg/80 hover:bg-brand-primary text-brand-text p-2 rounded-full backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 focus:opacity-100 shadow-lg border border-brand-bgLight"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </button>
+
+        <div
+          class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 p-2 rounded-full bg-brand-bg/50 backdrop-blur-sm border border-brand-bgLight/30"
+        >
+          <button
+            onclick="goToSlide(0)"
+            class="w-2.5 h-2.5 rounded-full transition-all bg-brand-primary indicator"
+          ></button>
+          <button
+            onclick="goToSlide(1)"
+            class="w-2.5 h-2.5 rounded-full transition-all bg-brand-sub/50 hover:bg-brand-sub indicator"
+          ></button>
+          <button
+            onclick="goToSlide(2)"
+            class="w-2.5 h-2.5 rounded-full transition-all bg-brand-sub/50 hover:bg-brand-sub indicator"
+          ></button>
+          <button
+            onclick="goToSlide(3)"
+            class="w-2.5 h-2.5 rounded-full transition-all bg-brand-sub/50 hover:bg-brand-sub indicator"
+          ></button>
+          <button
+            onclick="goToSlide(4)"
+            class="w-2.5 h-2.5 rounded-full transition-all bg-brand-sub/50 hover:bg-brand-sub indicator"
+          ></button>
+          <button
+            onclick="goToSlide(5)"
+            class="w-2.5 h-2.5 rounded-full transition-all bg-brand-sub/50 hover:bg-brand-sub indicator"
+          ></button>
+        </div>
+      </div>
+    </header>
+
+    <script>
+      let currentSlide = 0;
+      const totalSlides = 6;
+      const track = document.getElementById("carousel-track");
+      const indicators = document.querySelectorAll(".indicator");
+
+      function updateCarousel() {
+        // Move the track
+        track.style.transform = `translateX(-${currentSlide * 100}%)`;
+
+        // Update dots
+        indicators.forEach((dot, index) => {
+          if (index === currentSlide) {
+            dot.classList.remove("bg-brand-sub/50");
+            dot.classList.add("bg-brand-primary", "scale-125");
+          } else {
+            dot.classList.remove("bg-brand-primary", "scale-125");
+            dot.classList.add("bg-brand-sub/50");
+          }
+        });
+      }
+
+      function moveSlide(direction) {
+        currentSlide = (currentSlide + direction + totalSlides) % totalSlides;
+        updateCarousel();
+      }
+
+      function goToSlide(index) {
+        currentSlide = index;
+        updateCarousel();
+      }
+    </script>
+
+    <section id="quickstart" class="py-20 bg-brand-bgDark">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold mb-2 flex items-center justify-center gap-2">
+          <svg class="w-8 h-8 text-brand-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+          Quick Start
+        </h2>
+        <p class="text-brand-sub mb-12 flex justify-center">Get up and running in less than a minute.</p>
+
+        <div class="grid md:grid-cols-2 gap-8">
+          <div
+            class="bg-brand-bgLight p-6 rounded-lg border-2 border-brand-bgLight hover:border-brand-primary transition-colors"
+          >
+            <div class="text-brand-primary font-bold text-lg mb-2">1. Enable & Add</div>
+            <p class="text-brand-sub">
+              Click the extension icon and ensure the <span class="text-brand-text font-bold">toggle is ON</span>. Use
+              the <span class="text-brand-text font-bold">"Quick Add"</span> button when visiting a distracting site, or
+              manually type domains (e.g., youtube.com) in the Websites tab.
+            </p>
+          </div>
+          <div
+            class="bg-brand-bgLight p-6 rounded-lg border-2 border-brand-bgLight hover:border-brand-primary transition-colors"
+          >
+            <div class="text-brand-primary font-bold text-lg mb-2">2. Set Limits</div>
+            <p class="text-brand-sub">
+              Go to Settings, under <span class="text-brand-text font-bold">Time Limit</span> make sure it says
+              <span class="text-brand-text font-bold">enabled</span>, and set your daily max time. This limit applies
+              specifically to the websites in your block list.
+            </p>
+          </div>
+          <div
+            class="bg-brand-bgLight p-6 rounded-lg border-2 border-brand-bgLight hover:border-brand-primary transition-colors"
+          >
+            <div class="text-brand-primary font-bold text-lg mb-2">3. Choose Action</div>
+            <p class="text-brand-sub">
+              Select what happens when time runs out: <span class="text-brand-text font-bold"><br />Redirect</span> to a
+              site of your choosing <span class="text-brand-text font-bold"><br />Block</span> access completely with
+              optional disable <span class="text-brand-text font-bold"><br />Warn</span> with a reminder in the top
+              right corner
+            </p>
+          </div>
+          <div
+            class="bg-brand-bgLight p-6 rounded-lg border-2 border-brand-bgLight hover:border-brand-primary transition-colors"
+          >
+            <div class="text-brand-primary font-bold text-lg mb-2">4. Analyze</div>
+            <p class="text-brand-sub">
+              Check the <span class="text-brand-text font-bold">Dashboard</span> to see your weekly usage. Insights can
+              be viewed with the button "Learn more about your habits".
+              <span class="text-brand-text font-bold">Sites under 1 minute are hidden</span> but are still counted.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="help" class="py-20">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold mb-12 text-center">General Help & Features</h2>
+
+        <div class="grid lg:grid-cols-3 gap-8">
+          <div class="bg-brand-bgLight p-6 rounded-xl border border-brand-bgLight">
+            <div
+              class="w-12 h-12 bg-brand-primary/20 rounded-lg flex items-center justify-center mb-4 text-brand-primary"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"
+                ></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"
+                ></path>
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-3">Dashboard</h3>
+            <ul class="space-y-2 text-brand-sub text-sm">
+              <li>• <strong class="text-brand-text">Today's Usage:</strong> Real-time tracking of all web activity.</li>
+              <li>
+                • <strong class="text-brand-text">Weekly View:</strong> Click the day selector to see history (up to 7
+                days).
+              </li>
+              <li>
+                • <strong class="text-brand-text">Color Coding:</strong> Darker shades indicate higher time usage.
+              </li>
+            </ul>
+          </div>
+
+          <div class="bg-brand-bgLight p-6 rounded-xl border border-brand-bgLight">
+            <div
+              class="w-12 h-12 bg-brand-primary/20 rounded-lg flex items-center justify-center mb-4 text-brand-primary"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                ></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                ></path>
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-3">Settings & Modes</h3>
+            <ul class="space-y-2 text-brand-sub text-sm">
+              <li>• <strong class="text-brand-text">Redirect:</strong> Send blocked traffic to a productive URL.</li>
+              <li>• <strong class="text-brand-text">Block:</strong> Full screen block (requires 5s hold to bypass).</li>
+              <li>
+                • <strong class="text-brand-text">Instant Purge:</strong> Optional setting to close tabs immediately.
+              </li>
+              <li>
+                • <strong class="text-brand-text">AFK Detection:</strong> Pauses timer after 5 mins of inactivity.
+              </li>
+            </ul>
+          </div>
+
+          <div class="bg-brand-bgLight p-6 rounded-xl border border-brand-bgLight">
+            <div
+              class="w-12 h-12 bg-brand-primary/20 rounded-lg flex items-center justify-center mb-4 text-brand-primary"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                ></path>
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-3">Smart Insights</h3>
+            <ul class="space-y-2 text-brand-sub text-sm">
+              <li>• <strong class="text-brand-text">Focus Score:</strong> 0-100 rating based on distraction time.</li>
+              <li>• <strong class="text-brand-text">Streak:</strong> Maintain a score >75 to build your streak.</li>
+              <li>• <strong class="text-brand-text">Comparisons:</strong> See if you are improving vs yesterday.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="py-20 bg-brand-bgDark">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold mb-10 text-center">Frequently Asked Questions</h2>
+
+        <div class="space-y-4">
+          <details class="group bg-brand-bgLight border border-brand-bgLight rounded-lg p-4 cursor-pointer">
+            <summary class="font-semibold list-none flex justify-between items-center text-brand-text">
+              <span>Why isn't a website being tracked?</span>
+              <span class="transition group-open:rotate-180">
+                <svg
+                  fill="none"
+                  height="24"
+                  shape-rendering="geometricPrecision"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  width="24"
+                >
+                  <path d="M6 9l6 6 6-6"></path>
+                </svg>
+              </span>
+            </summary>
+            <p class="text-brand-sub mt-4 text-sm leading-relaxed">
+              Chrome restricts extensions from running on internal pages (chrome://, New Tab), the Web Store, and local
+              files (file://). These cannot be tracked or blocked.
+            </p>
+          </details>
+
+          <details class="group bg-brand-bgLight border border-brand-bgLight rounded-lg p-4 cursor-pointer">
+            <summary class="font-semibold list-none flex justify-between items-center text-brand-text">
+              <span>I added a site but it's not blocking. Why?</span>
+              <span class="transition group-open:rotate-180">
+                <svg
+                  fill="none"
+                  height="24"
+                  shape-rendering="geometricPrecision"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  width="24"
+                >
+                  <path d="M6 9l6 6 6-6"></path>
+                </svg>
+              </span>
+            </summary>
+            <p class="text-brand-sub mt-4 text-sm leading-relaxed">
+              Ensure the toggle is ON (green icon), the Timer is set to Active in settings, and you have reloaded the
+              tab after adding the site. Also check that you haven't dismissed a previous warning for that tab.
+            </p>
+          </details>
+
+          <details class="group bg-brand-bgLight border border-brand-bgLight rounded-lg p-4 cursor-pointer">
+            <summary class="font-semibold list-none flex justify-between items-center text-brand-text">
+              <span>Does this track me when minimized?</span>
+              <span class="transition group-open:rotate-180">
+                <svg
+                  fill="none"
+                  height="24"
+                  shape-rendering="geometricPrecision"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  width="24"
+                >
+                  <path d="M6 9l6 6 6-6"></path>
+                </svg>
+              </span>
+            </summary>
+            <p class="text-brand-sub mt-4 text-sm leading-relaxed">
+              Yes, if the window is minimized, time continues to count until the AFK/Idle detection kicks in (default is
+              5 minutes).
+            </p>
+          </details>
+
+          <details class="group bg-brand-bgLight border border-brand-bgLight rounded-lg p-4 cursor-pointer">
+            <summary class="font-semibold list-none flex justify-between items-center text-brand-text">
+              <span>Is my data private?</span>
+              <span class="transition group-open:rotate-180">
+                <svg
+                  fill="none"
+                  height="24"
+                  shape-rendering="geometricPrecision"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  width="24"
+                >
+                  <path d="M6 9l6 6 6-6"></path>
+                </svg>
+              </span>
+            </summary>
+            <p class="text-brand-sub mt-4 text-sm leading-relaxed">
+              100%. All data is stored locally in your Chrome browser's storage. Nothing is sent to external servers,
+              and we do not track your usage.
+            </p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="pt-16 pb-8 border-t border-brand-bgLight">
+      <div class="max-w-4xl mx-auto px-4 text-center">
+        <h2 class="text-2xl font-bold mb-4">Enjoying Lock In?</h2>
+        <p class="text-brand-sub mb-8 max-w-xl mx-auto">
+          This is a solo developed passion project. If it helps you stay focused, consider starring the repo or buying
+          me a coffee to support future updates!
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <a
+            href="https://ko-fi.com/alexprograms"
+            target="_blank"
+            class="flex items-center gap-2 bg-[#FF5E5B] hover:bg-[#ff4642] text-white font-bold py-3 px-6 rounded-full transition-transform hover:-translate-y-1 shadow-lg shadow-[#FF5E5B]/20"
+          >
+            <img src="https://storage.ko-fi.com/cdn/cup-border.png" alt="Ko-fi logo" class="w-6 h-6 animate-pulse" />
+            <span>Buy me a Coffee</span>
+          </a>
+          <a
+            href="https://github.com/AlexLenh7/Lock-In-Distraction-Blocker"
+            target="_blank"
+            class="flex items-center gap-2 bg-brand-bgLight hover:bg-brand-primary text-brand-text font-semibold py-3 px-6 rounded-full transition-all border border-brand-bgLight"
+          >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+              ></path>
+            </svg>
+            <span>Star on GitHub</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <footer class="bg-brand-bgDark py-8 mt-auto">
+      <div class="max-w-6xl mx-auto px-4 text-center">
+        <p class="text-brand-sub text-sm">
+          &copy;
+          <script>
+            document.write(new Date().getFullYear());
+          </script>
+          Lock In Distraction Blocker.
+          <br class="sm:hidden" />
+          Open Source under MIT License.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

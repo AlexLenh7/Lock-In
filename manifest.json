@@ -5,7 +5,7 @@
   "description": "Manage your most problematic sites to keep yourself locked in.",
   "action": {
     "default_popup": "index.html",
-    "default_icon": "src/assets/Lock-In-Icon-2.png"
+    "default_icon": "src/assets/Lock-In-Icon-Toolbar.png"
   },
   "icons": {
     "16": "src/assets/Lock-In-Icon-2.png",

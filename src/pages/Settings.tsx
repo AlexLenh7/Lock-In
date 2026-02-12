@@ -248,10 +248,10 @@ export default function Settings() {
         </div> */}
         {/* Daily Maximum Time Setting */}
         <div style={{ "--delay": `50ms` } as React.CSSProperties} className="animate-fade-up animate-stagger">
-          <span className="text-text flex justify-center items-center uppercase tracking-wide">
+          <div className="text-text flex justify-center items-center uppercase tracking-wide leading-0 mb-0.5">
             <MdOutlineTimelapse className="size-4 mr-1" />
             Time Limit
-          </span>
+          </div>
           <p className="flex justify-center mb-1 text-sub-text leading-tight">Maximum time allowed (Resets daily)</p>
         </div>
         <div
@@ -315,15 +315,10 @@ export default function Settings() {
         {active && (
           <div style={{ "--delay": `100ms` } as React.CSSProperties} className="animate-stagger animate-fade-up">
             <div className="grid grid-cols-3 items-center p-2 bg-bg-dark mt-3 border-2 border-bg-light">
-              {/* Col 1: Label */}
               <div className="col-span-1 text-text leading-tight flex justify-center">Current Session</div>
-
-              {/* Col 2: Digital Clock */}
               <div className="col-span-1 flex justify-center items-center text-text font-bold tracking-wide">
                 {formatTimer(showTimer)}
               </div>
-
-              {/* Col 3: Buttons */}
               <div className="col-span-1 grid grid-cols-2 gap-1 h-full">
                 <button
                   onClick={() => chrome.storage.sync.set({ timerPause: updateTimerPause(timerPause as boolean) })}
@@ -353,7 +348,7 @@ export default function Settings() {
         )}
         {/* Website Action Settings */}
         <div style={{ "--delay": `50ms` } as React.CSSProperties} className="animate-fade-up animate-stagger">
-          <span className="flex text-text justify-center items-center mt-3 uppercase tracking-wide">
+          <span className="flex text-text justify-center items-center mt-3 uppercase tracking-wide leading-0 mb-0.5">
             <TiWarningOutline className="size-4 mr-1" />
             Website Actions
           </span>
@@ -451,7 +446,7 @@ export default function Settings() {
           </div>
         )}
         <div style={{ "--delay": `50ms` } as React.CSSProperties} className="animate-fade-up animate-stagger">
-          <span className="text-text flex justify-center items-center uppercase tracking-wide mt-3">
+          <span className="text-text flex justify-center items-center uppercase tracking-wide mt-3 leading-0 mb-0.5">
             <RiRestTimeLine className="size-4 mr-1" />
             AFK Detection
           </span>

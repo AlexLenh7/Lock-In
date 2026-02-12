@@ -256,7 +256,6 @@ async function calculateInsights() {
 
 // handles true AFK status
 async function handleAfkTime(currentSite, startTime) {
-  //const { currentSite, startTime } = await chrome.storage.local.get(["currentSite", "startTime"]);
   if (currentSite && startTime) {
     await commitTime(Date.now(), startTime, currentSite);
     await chrome.storage.local.remove(["startTime", "currentSite"]);
@@ -529,19 +528,17 @@ async function checkDay() {
       storeBlockDay: updatedStoreBlock,
       storeGlobalDay: updatedStoreGlobal,
       currentDay: today,
-      totalWebsiteTime: {}, // Resets today's blocked time
-      globalWebsiteTime: {}, // Resets today's global time
     };
 
     log("CurrDay Blocked Times:", storeBlockDay);
     log("CurrDay Global Times:", storeGlobalDay);
 
     // reset times for the new day
-    //await resetTodayTimeData();
+    await resetTodayTimeData();
 
     if (active && (tmpMaxTime === undefined || tmpMaxTime <= 0)) {
-      updates.tmpMaxTime = maxTime; // Added to updates object
-      updates.showAction = false; // Added to updates object
+      updates.tmpMaxTime = maxTime;
+      updates.showAction = false;
     }
 
     await chrome.storage.local.set(updates);
@@ -582,24 +579,11 @@ async function commitTime(now, start, url) {
     const domain = new URL(url).hostname.replace(/^www\./, "");
 
     const [localData, syncData] = await Promise.all([
-      chrome.storage.local.get([
-        "startTime",
-        "currentDay",
-        "globalWebsiteTime",
-        "totalWebsiteTime",
-        "tmpMaxTime",
-        "showAction",
-      ]),
+      chrome.storage.local.get(["startTime", "globalWebsiteTime", "totalWebsiteTime", "tmpMaxTime", "showAction"]),
       chrome.storage.sync.get(["active", "maxTime", "timerPause", "action", "redirect", "nuke"]),
     ]);
 
     const updateData = {};
-
-    // Check and update day
-    const currDay = new Date().getDay();
-    if (localData.currentDay !== currDay) {
-      updateData.currentDay = currDay;
-    }
 
     // Update Global time
     const globalWebsiteTime = localData.globalWebsiteTime || {};
@@ -651,11 +635,10 @@ async function commitTime(now, start, url) {
     }
 
     await chrome.storage.local.set(updateData);
-    //await calculateInsights();
     log(`[Timer] Committed ${delta}s to ${domain}. Blocked: ${isBlocked}`);
     log("global sites:", globalWebsiteTime);
   } catch (error) {
-    error("[commitTime Error]:", error);
+    console.error("[commitTime Error]:", error);
   }
 }
 

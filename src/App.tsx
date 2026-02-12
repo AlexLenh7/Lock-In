@@ -196,22 +196,7 @@ function App() {
     >
       <div className="relative w-full justify-center items-center flex flex-col">
         <h1 className="text-text w-full flex justify-center items-center text-2xl font-extrabold tracking-widest z-10 leading-none mb-1">
-          {/* <Typewriter
-            onInit={(typewriter) => {
-              typewriter
-                .typeString(`L${(<LockInLogo />)}CK IN`)
-                .pauseFor(1000)
-                .start();
-            }}
-            options={{
-              skipAddStyles: true,
-              cursor: ".",
-            }}
-          /> */}
-          <div
-            style={{ "--delay": `50ms` } as React.CSSProperties}
-            className="flex justify-center items-center animate-stagger"
-          >
+          <div className="flex justify-center items-center">
             <span className="animate-reveal-l overflow-hidden whitespace-nowrap">L</span>
             <div className="animate-logo-spin flex items-center justify-center mx-0.5 shrink-0">
               <LockInLogo className="size-4.5" />
@@ -219,9 +204,6 @@ function App() {
             <span className="animate-reveal-r overflow-hidden whitespace-nowrap">CK IN</span>
           </div>
         </h1>
-        {/* <h1 className="absolute text-primary w-full flex justify-center text-2xl font-bold mb-4 tracking-widest translate-y-0.5 translate-x-0.5">
-          LOCK IN.
-        </h1> */}
         <div>
           <p className="text-sub-text w-full flex items-center justify-center mb-2 text-xs tracking-wide">
             <>
