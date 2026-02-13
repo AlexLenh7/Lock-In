@@ -212,7 +212,7 @@ export default function Settings() {
   }
 
   return (
-    <div>
+    <div className="w-full h-full flex justify-start flex-col">
       <div className="text-text">
         {/* <div className="flex flex-row items-center w-full h-fit">
           <div className="grid-cols-2 grid w-full">
@@ -395,9 +395,6 @@ export default function Settings() {
                 onKeyDown={(e) => e.key === "Enter" && handleKeyDown()}
                 onBlur={handleBlur}
               />
-              {/* <span className="flex justify-center text-sub-text text-[10px] leading-tight">
-                Enter a valid website to redirect
-              </span> */}
             </div>
           </div>
         )}
@@ -436,13 +433,6 @@ export default function Settings() {
                 </button>
               </div>
             </div>
-
-            {/* <span
-              style={{ "--delay": `100ms` } as React.CSSProperties}
-              className="animate-fade-up animate-stagger flex justify-center mb-2 text-sub-text"
-            >
-              Optional settings for Block
-            </span> */}
           </div>
         )}
         <div style={{ "--delay": `50ms` } as React.CSSProperties} className="animate-fade-up animate-stagger">

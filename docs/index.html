@@ -96,17 +96,20 @@
           <div class="hidden md:block">
             <div class="ml-10 flex items-baseline space-x-8">
               <a
-                href="#quickstart"
-                class="hover:text-brand-primary transition-colors px-3 py-2 rounded-md text-sm font-medium"
-                >Quick Start</a
-              >
-              <a href="#faq" class="hover:text-brand-primary transition-colors px-3 py-2 rounded-md text-sm font-medium"
+                href="#faq"
+                class="hover:text-brand-primary transition-colors duration-300 px-3 py-2 rounded-md text-sm font-medium"
                 >FAQ</a
+              >
+              <a
+                href="https://ko-fi.com/alexprograms"
+                target="_blank"
+                class="hover:bg-[#be2b29] border-2 border-[#FF5E5B] transition-colors duration-300 px-3 py-2 rounded-md text-sm font-bold"
+                >Donate!</a
               >
               <a
                 href="https://github.com/AlexLenh7/Lock-In-Distraction-Blocker"
                 target="_blank"
-                class="bg-brand-bgLight hover:bg-brand-primaryDark border border-brand-primary text-brand-text px-4 py-2 rounded-md text-sm font-bold transition-all"
+                class="hover:bg-brand-primaryDark border-2 border-brand-primary text-brand-text px-4 py-2 rounded-md text-sm font-bold transition-all duration-300"
               >
                 GitHub
               </a>
@@ -130,15 +133,9 @@
       <div class="flex justify-center gap-4">
         <a
           href="#"
-          class="bg-brand-primary hover:bg-brand-primaryDark text-white font-bold py-3 px-8 rounded-lg transition-all shadow-lg shadow-brand-primary/25"
+          class="bg-brand-primary hover:bg-brand-primaryDark hover:border-brand-primary border-2 border-transparent text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 shadow-lg shadow-brand-primary/25"
         >
           Add to Chrome
-        </a>
-        <a
-          href="#quickstart"
-          class="bg-brand-bgLight hover:bg-brand-bgDark border border-brand-bgLight text-brand-text font-semibold py-3 px-8 rounded-lg transition-all"
-        >
-          Learn More
         </a>
       </div>
     </header>
@@ -155,7 +152,7 @@
 
         <div class="grid md:grid-cols-2 gap-8">
           <div
-            class="bg-brand-bgLight p-6 rounded-lg border-2 border-brand-bgLight hover:border-brand-primary transition-colors"
+            class="bg-brand-bgLight p-6 rounded-lg border-2 border-brand-bgLight hover:border-brand-primary transition-all duration-300"
           >
             <div class="text-brand-primary font-bold text-lg mb-2">1. Enable & Add</div>
             <p class="text-brand-sub">
@@ -165,7 +162,7 @@
             </p>
           </div>
           <div
-            class="bg-brand-bgLight p-6 rounded-lg border-2 border-brand-bgLight hover:border-brand-primary transition-colors"
+            class="bg-brand-bgLight p-6 rounded-lg border-2 border-brand-bgLight hover:border-brand-primary transition-all duration-300"
           >
             <div class="text-brand-primary font-bold text-lg mb-2">2. Set Limits</div>
             <p class="text-brand-sub">
@@ -175,7 +172,7 @@
             </p>
           </div>
           <div
-            class="bg-brand-bgLight p-6 rounded-lg border-2 border-brand-bgLight hover:border-brand-primary transition-colors"
+            class="bg-brand-bgLight p-6 rounded-lg border-2 border-brand-bgLight hover:border-brand-primary transition-all duration-300"
           >
             <div class="text-brand-primary font-bold text-lg mb-2">3. Choose Action</div>
             <p class="text-brand-sub">
@@ -186,13 +183,14 @@
             </p>
           </div>
           <div
-            class="bg-brand-bgLight p-6 rounded-lg border-2 border-brand-bgLight hover:border-brand-primary transition-colors"
+            class="bg-brand-bgLight p-6 rounded-lg border-2 border-brand-bgLight hover:border-brand-primary transition-all duration-300"
           >
             <div class="text-brand-primary font-bold text-lg mb-2">4. Analyze</div>
             <p class="text-brand-sub">
-              Check the <span class="text-brand-text font-bold">Dashboard</span> to see your weekly usage. Insights can
-              be viewed with the button "Learn more about your habits".
-              <span class="text-brand-text font-bold">Sites under 1 minute are hidden</span> but are still counted.
+              Periodically check the <span class="text-brand-text font-bold">Dashboard</span> to see your weekly usage.
+              Insights can be viewed with the button "Learn more about your habits".
+              <span class="text-brand-text font-bold">Note that sites under 1 minute are hidden</span> but are still
+              counted.
             </p>
           </div>
         </div>
@@ -204,7 +202,9 @@
         <h2 class="text-3xl font-bold mb-10 text-center">Frequently Asked Questions</h2>
 
         <div class="space-y-4">
-          <details class="group bg-brand-bgLight border border-brand-bgLight rounded-lg p-4 cursor-pointer">
+          <details
+            class="group bg-brand-bgLight p-4 transition-all duration-300 border-2 border-transparent hover:border-2 hover:border-brand-primary rounded-lg cursor-pointer"
+          >
             <summary class="font-semibold list-none flex justify-between items-center text-brand-text">
               <span>Why isn't a website being tracked?</span>
               <span class="transition group-open:rotate-180">
@@ -224,12 +224,14 @@
               </span>
             </summary>
             <p class="text-brand-sub mt-4 text-sm leading-relaxed">
-              Chrome restricts extensions from running on internal pages (chrome://, New Tab), the Web Store, and local
-              files (file://). These cannot be tracked or blocked.
+              There are certain websites that won't be tracked such as internal pages like chrome://, New Tab, and local
+              files file://. These cannot be tracked or blocked.
             </p>
           </details>
 
-          <details class="group bg-brand-bgLight border border-brand-bgLight rounded-lg p-4 cursor-pointer">
+          <details
+            class="group bg-brand-bgLight p-4 transition-all duration-300 border-2 border-transparent hover:border-2 hover:border-brand-primary rounded-lg cursor-pointer"
+          >
             <summary class="font-semibold list-none flex justify-between items-center text-brand-text">
               <span>I added a site but it's not blocking. Why?</span>
               <span class="transition group-open:rotate-180">
@@ -249,14 +251,17 @@
               </span>
             </summary>
             <p class="text-brand-sub mt-4 text-sm leading-relaxed">
-              Ensure the toggle is ON (green icon), the Timer is set to Active in settings, and you have reloaded the
-              tab after adding the site. Also check that you haven't dismissed a previous warning for that tab.
+              Ensure the toggle is ON near the top of the extension, the Timer is set to Active in settings, and you
+              have reloaded the tab after adding the site. Also check that you haven't dismissed a previous warning for
+              that tab.
             </p>
           </details>
 
-          <details class="group bg-brand-bgLight border border-brand-bgLight rounded-lg p-4 cursor-pointer">
+          <details
+            class="group bg-brand-bgLight p-4 transition-all duration-300 border-2 border-transparent hover:border-2 hover:border-brand-primary rounded-lg cursor-pointer"
+          >
             <summary class="font-semibold list-none flex justify-between items-center text-brand-text">
-              <span>Does this track me when minimized?</span>
+              <span>Does the extension track websites when minimized?</span>
               <span class="transition group-open:rotate-180">
                 <svg
                   fill="none"
@@ -274,12 +279,14 @@
               </span>
             </summary>
             <p class="text-brand-sub mt-4 text-sm leading-relaxed">
-              Yes, if the window is minimized, time continues to count until the AFK/Idle detection kicks in (default is
-              5 minutes).
+              Yes, if the window is minimized / out of focus, the last website you were on will continue to be tracked
+              until the AFK/Idle detection kicks in.
             </p>
           </details>
 
-          <details class="group bg-brand-bgLight border border-brand-bgLight rounded-lg p-4 cursor-pointer">
+          <details
+            class="group bg-brand-bgLight p-4 transition-all duration-300 border-2 border-transparent hover:border-2 hover:border-brand-primary rounded-lg cursor-pointer"
+          >
             <summary class="font-semibold list-none flex justify-between items-center text-brand-text">
               <span>Is my data private?</span>
               <span class="transition group-open:rotate-180">
@@ -299,8 +306,8 @@
               </span>
             </summary>
             <p class="text-brand-sub mt-4 text-sm leading-relaxed">
-              100%. All data is stored locally in your Chrome browser's storage. Nothing is sent to external servers,
-              and we do not track your usage.
+              Yes, all data is stored locally in your Chrome browser's storage. Nothing is sent to external servers, and
+              nothing is being tracked.
             </p>
           </details>
         </div>
@@ -311,8 +318,8 @@
       <div class="max-w-4xl mx-auto px-4 text-center">
         <h2 class="text-2xl font-bold mb-4">Enjoying Lock In?</h2>
         <p class="text-brand-sub mb-8 max-w-xl mx-auto">
-          This is a solo developed passion project. If it helps you stay focused, consider starring the repo or buying
-          me a coffee to support future updates!
+          This is a solo developed project. If it helps you stay locked in, consider donating to support future updates,
+          starring the repo or leaving a review!
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <a
@@ -320,8 +327,8 @@
             target="_blank"
             class="flex items-center gap-2 bg-[#FF5E5B] hover:bg-[#ff4642] text-white font-bold py-3 px-6 rounded-full transition-transform hover:-translate-y-1 shadow-lg shadow-[#FF5E5B]/20"
           >
-            <img src="https://storage.ko-fi.com/cdn/cup-border.png" alt="Ko-fi logo" class="w-6 h-6 animate-pulse" />
-            <span>Buy me a Coffee</span>
+            <img src="https://storage.ko-fi.com/cdn/cup-border.png" alt="Ko-fi logo" class="w-6 h-6" />
+            <span>Support by donating!</span>
           </a>
           <a
             href="https://github.com/AlexLenh7/Lock-In-Distraction-Blocker"

@@ -685,9 +685,13 @@ async function syncSession(tabUrl, reason) {
         showAction: !(active && tmpMaxTime > 0),
       });
 
-      const { action, redirect, nuke } = await chrome.storage.sync.get(["action", "redirect", "nuke"]);
+      const [local, sync] = await Promise.all([
+        await chrome.storage.sync.get(["action", "redirect", "nuke"]),
+        await chrome.storage.local.get("showAction"),
+      ]);
+      const { action, redirect, nuke } = local;
+      const { showAction } = sync;
       const isBlocked = await checkBlock(tabUrl);
-      const { showAction } = await chrome.storage.local.get("showAction");
 
       await Promise.all([
         handleRedirect(tabUrl, action, redirect, isBlocked, showAction),
@@ -860,8 +864,8 @@ chrome.storage.onChanged.addListener(async (changes, namespace) => {
       }
     }
 
-    const hasSessionRelevantChange = Object.keys(changes).some((key) => SESSION_RELEVANT_KEYS.has(key));
-    if (hasSessionRelevantChange) {
+    // handle rest of storage changes instantly and ignore theme and afk
+    if (!changes.theme || !changes.afkTime || !changes.afkActive) {
       const [currTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
       if (currTab?.url && (await isValid(currTab.url))) {
         await syncSession(currTab.url, "Settings Toggle");
