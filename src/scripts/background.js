@@ -345,6 +345,9 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         // call checkDay after to avoid commiting stale data
         await checkDay();
         await chrome.storage.local.set({ startTime: now });
+      } else if (currentSite && startTime && !afkReached && !idleStart) {
+        log("[Alarm] Active tab doesn't match tracked site. Clearing stale session.");
+        await chrome.storage.local.remove(["currentSite", "startTime"]);
       }
     } else if (alarm.name === "AFKalarm") {
       const { currentSite, startTime, idleStart, afkReached, pendingReturn, returnCheckTime } =
@@ -379,6 +382,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
           // Resume session for current tab
           if (currTab.url) {
+            await chrome.storage.local.set({ startTime: returnCheckTime });
             await syncSession(currTab.url, "Confirmed return from idle");
           }
           return;
@@ -431,9 +435,10 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 async function startUpEvent() {
   try {
     log("[Starting Up Extension]");
+    await chrome.alarms.clearAll();
+    await chrome.storage.local.remove(["currentSite", "startTime"]);
     await updateContentScript();
     await resetAfkChecks();
-    await chrome.storage.local.remove(["currentSite", "startTime"]);
     await calculateInsights();
     chrome.idle.setDetectionInterval(30);
     chrome.alarms.create("alarm", { periodInMinutes: 0.5 });

@@ -90,8 +90,7 @@ Customize how you stay focused:
 > Yes, all data is stored locally in your Chrome browser's storage. Nothing is sent to external servers, and nothing is being tracked.
 
 > [!TIP]
-
-## If you have an issue that isn't listed always try reloading the extension by going to **Manage Extensions** and clicking the reload icon.
+> If you have an issue that isn't listed always try reloading the extension by going to **Manage Extensions** and clicking the reload icon.
 
 ## 💖 Support & Contributing
 
