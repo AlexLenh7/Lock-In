@@ -1,7 +1,7 @@
 import { isValid, checkBlock, sumObjectValues } from "../utils/Helpers";
 
 // Set true for development for logging
-const DEBUG = false;
+const DEBUG = true;
 const log = (...args) => DEBUG && console.log(...args);
 
 async function calculateInsights() {
@@ -567,6 +567,7 @@ async function handleRedirect(action, redirect, isBlocked, showAction) {
     if (activeTab?.id) {
       const target = redirect.startsWith("http") ? redirect : `https://${redirect}`;
       chrome.tabs.update(activeTab.id, { url: target });
+      log("[handleRedirect]: Tab redirected");
     }
   }
 }
@@ -578,6 +579,7 @@ async function handleNuke(action, nuke, isBlocked, showAction) {
     const [activeTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
     if (activeTab?.id) {
       chrome.tabs.remove(activeTab.id);
+      log("[handleNuke]: Tab removed");
     }
   }
 }
@@ -634,8 +636,8 @@ async function commitTime(now, start, url) {
         log("[Timer Active] Remaining Time:", newMaxTime);
         if (shouldShowAction) {
           await Promise.all([
-            handleRedirect(url, syncData.action, syncData.redirect, isBlocked, shouldShowAction),
-            handleNuke(url, syncData.action, syncData.nuke, isBlocked, shouldShowAction),
+            handleRedirect(syncData.action, syncData.redirect, isBlocked, shouldShowAction),
+            handleNuke(syncData.action, syncData.nuke, isBlocked, shouldShowAction),
           ]).catch(console.error);
         }
       } else {
@@ -695,17 +697,17 @@ async function syncSession(tabUrl, reason) {
         showAction: !(active && tmpMaxTime > 0),
       });
 
-      const [local, sync] = await Promise.all([
-        await chrome.storage.sync.get(["action", "redirect", "nuke"]),
-        await chrome.storage.local.get("showAction"),
+      const [sync, local] = await Promise.all([
+        chrome.storage.sync.get(["action", "redirect", "nuke"]),
+        chrome.storage.local.get("showAction"),
       ]);
-      const { action, redirect, nuke } = local;
-      const { showAction } = sync;
+      const { action, nuke, redirect } = sync;
+      const { showAction } = local;
       const isBlocked = await checkBlock(tabUrl);
 
       await Promise.all([
-        handleRedirect(tabUrl, action, redirect, isBlocked, showAction),
-        handleNuke(tabUrl, action, nuke, isBlocked, showAction),
+        handleRedirect(action, redirect, isBlocked, showAction),
+        handleNuke(action, nuke, isBlocked, showAction),
       ]).catch(console.error);
     }
   } catch (error) {
