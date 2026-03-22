@@ -225,15 +225,15 @@ export default function Dashboard() {
               <div className="absolute inset-0 row flex items-center justify-center mb-6 pointer-events-none">
                 <span
                   key={`${active}${currDay}`}
-                  className="z-10 relative group text-secondary text-[10px] cursor-help whitespace-nowrap pointer-events-auto"
+                  className="z-10 relative group text-sub-text text-[10px] cursor-help whitespace-nowrap pointer-events-auto"
                 >
                   {currDay !== today ? `${currDay}` : "Today"}'s Usage
                   <div className="absolute left-1/2 -translate-x-1/2 leading-tight top-full mt-1 p-1 text-xs w-35 text-text bg-bg-light rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-pre-line pointer-events-none">
-                    Sites with 1 minute or less will not displayed but are still counted
+                    Sites less than 1 minute will not be displayed but are still counted
                   </div>
                 </span>
               </div>
-              <div className="absolute pointer-events-none inset-0 flex items-center mt-2 justify-center text-text text-lg transition-all duration-300">
+              <div className="absolute pointer-events-none inset-0 flex items-center mt-2 justify-center text-secondary text-lg transition-all duration-300">
                 {active === "block" ? sumWebsiteTime() : sumGlobalTime()}
               </div>
               <div key={`${active}${currDay}`} className="animate-pie-reveal animate-circular-wipe pointer-events-none">

@@ -5,7 +5,7 @@
 </a>
 <div align="center"> 
   <img alt="Status Deployed" src="https://img.shields.io/badge/Status-Deployed-26c73c?logo=rocket&logoColor=fff" />
-  <img alt="Version 1.0" src="https://img.shields.io/badge/Version-1.0-white?logo=google-chrome&logoColor=4285F4" />
+  <img alt="Version 1.1.4" src="https://img.shields.io/badge/Version-1.1.4-white?logo=google-chrome&logoColor=4285F4" />
   <img alt="Chrome web store" src="https://img.shields.io/badge/Chrome_Web_Store-4285F4?logo=chromewebstore&logoColor=white"/>
   <img alt="React" src="https://img.shields.io/badge/React-%2320232a.svg?logo=react&logoColor=%2361DAFB" />
   <img alt="Typescript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff" />
